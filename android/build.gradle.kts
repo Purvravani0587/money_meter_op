@@ -1,0 +1,40 @@
+import com.android.build.gradle.BaseExtension
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+val newBuildDir: Directory =
+    rootProject.layout.buildDirectory
+        .dir("../../build")
+        .get()
+rootProject.layout.buildDirectory.value(newBuildDir)
+
+subprojects {
+    val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
+    project.layout.buildDirectory.value(newSubprojectBuildDir)
+}
+subprojects {
+    project.evaluationDependsOn(":app")
+
+    plugins.withType<com.android.build.gradle.AppPlugin> {
+        extensions.configure<com.android.build.gradle.AppExtension> {
+            compileSdkVersion(36)
+            defaultConfig.targetSdkVersion(36)
+        }
+    }
+
+    plugins.withType<com.android.build.gradle.LibraryPlugin> {
+        extensions.configure<com.android.build.gradle.LibraryExtension> {
+            compileSdkVersion(36)
+            defaultConfig.targetSdkVersion(36)
+        }
+    }
+}
+
+tasks.register<Delete>("clean") {
+    delete(rootProject.layout.buildDirectory)
+}
