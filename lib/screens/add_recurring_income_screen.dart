@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../utils/ui_utils.dart';
+import '../widgets/responsive_center.dart';
 
 class AddRecurringIncomeScreen extends StatefulWidget {
   const AddRecurringIncomeScreen({super.key});
@@ -81,7 +82,8 @@ class _AddRecurringIncomeScreenState extends State<AddRecurringIncomeScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: SingleChildScrollView(
+        child: ResponsiveCenter(
+          child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -245,8 +247,9 @@ class _AddRecurringIncomeScreenState extends State<AddRecurringIncomeScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildLabel(String text) {
     return Padding(

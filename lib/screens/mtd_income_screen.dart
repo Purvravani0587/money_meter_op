@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/api_models.dart';
 import '../services/auth_service.dart';
 import '../widgets/glass_container.dart';
+import '../widgets/responsive_center.dart';
 
 class MtdIncomeScreen extends StatefulWidget {
   const MtdIncomeScreen({super.key});
@@ -43,7 +44,8 @@ class _MtdIncomeScreenState extends State<MtdIncomeScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Column(
+        child: ResponsiveCenter(
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
@@ -135,8 +137,9 @@ class _MtdIncomeScreenState extends State<MtdIncomeScreen> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildRow(String name, String date, String received, String remaining, {Color remainingColor = Colors.black}) {
     return Padding(

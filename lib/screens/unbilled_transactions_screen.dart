@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/api_models.dart';
 import '../services/auth_service.dart';
 import '../widgets/glass_container.dart';
+import '../widgets/responsive_center.dart';
 
 class UnbilledTransactionsScreen extends StatefulWidget {
   const UnbilledTransactionsScreen({super.key});
@@ -43,7 +44,8 @@ class _UnbilledTransactionsScreenState extends State<UnbilledTransactionsScreen>
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Column(
+        child: ResponsiveCenter(
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
@@ -141,8 +143,9 @@ class _UnbilledTransactionsScreenState extends State<UnbilledTransactionsScreen>
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildItem(String name, String amount) {
     return Padding(

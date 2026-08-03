@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../controllers/auth/login_controller.dart';
 import '../../widgets/custom_button.dart';
+import '../../widgets/responsive_center.dart';
 import 'signup_screen.dart';
 import 'forgot_password_screen.dart';
 
@@ -16,7 +17,8 @@ class LoginScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: SingleChildScrollView(
+        child: ResponsiveCenter(
+          child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -188,8 +190,9 @@ class LoginScreen extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildLabel(String text, IconData icon) {
     return Padding(

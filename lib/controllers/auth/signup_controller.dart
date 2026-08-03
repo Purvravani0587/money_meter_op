@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:geolocator/geolocator.dart';
@@ -83,6 +85,11 @@ class SignUpController extends GetxController {
   Future<void> getCurrentLocation() async {
     isGettingLocation.value = true;
     try {
+      if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
+        UIUtils.showTopMessage(Get.context, 'Location feature is not supported on Desktop. Please enter your address manually.', isError: true);
+        return;
+      }
+
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) throw Exception('Location services are disabled. Please enable GPS.');
 
@@ -113,7 +120,9 @@ class SignUpController extends GetxController {
       
       UIUtils.showTopMessage(Get.context, 'Current location captured');
     } catch (e) {
-      UIUtils.showTopMessage(Get.context, e.toString().replaceFirst('Exception: ', ''), isError: true);
+      final msg = e.toString().replaceFirst('Exception: ', '');
+      final cleanMsg = msg.contains('Null check operator') ? 'Location not available on this device' : msg;
+      UIUtils.showTopMessage(Get.context, cleanMsg, isError: true);
     } finally {
       isGettingLocation.value = false;
     }

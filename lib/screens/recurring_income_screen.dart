@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/api_models.dart';
 import '../services/auth_service.dart';
 import '../widgets/glass_container.dart';
+import '../widgets/responsive_center.dart';
 import 'add_recurring_income_screen.dart';
 
 class RecurringIncomeScreen extends StatefulWidget {
@@ -58,25 +59,28 @@ class _RecurringIncomeScreenState extends State<RecurringIncomeScreen> {
       builder: (context) {
         return AlertDialog(
           title: const Text('Edit Income Master'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(labelText: 'Income Name'),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: amountController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Amount'),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: statusController,
-                decoration: const InputDecoration(labelText: 'Status (A/D)'),
-              ),
-            ],
+          content: SizedBox(
+            width: 400,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(labelText: 'Income Name'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: amountController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: 'Amount'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: statusController,
+                  decoration: const InputDecoration(labelText: 'Status (A/D)'),
+                ),
+              ],
+            ),
           ),
           actions: [
             TextButton(
@@ -173,7 +177,8 @@ class _RecurringIncomeScreenState extends State<RecurringIncomeScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Stack(
+        child: ResponsiveCenter(
+          child: Stack(
           children: [
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -296,8 +301,9 @@ class _RecurringIncomeScreenState extends State<RecurringIncomeScreen> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildItem(
     IconData icon,

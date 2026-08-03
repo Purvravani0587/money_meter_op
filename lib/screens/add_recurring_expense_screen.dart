@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/responsive_center.dart';
 
 class AddRecurringExpenseScreen extends StatefulWidget {
   const AddRecurringExpenseScreen({super.key});
@@ -16,7 +17,8 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: SingleChildScrollView(
+        child: ResponsiveCenter(
+          child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -163,8 +165,9 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildLabel(String text) {
     return Padding(

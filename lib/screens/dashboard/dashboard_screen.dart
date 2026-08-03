@@ -3,6 +3,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../services/auth_service.dart';
 import '../../widgets/glass_container.dart';
+import '../../widgets/responsive_center.dart';
 import '../api_test_screen.dart';
 import '../auth/login_screen.dart';
 import '../unbilled_transactions_screen.dart';
@@ -149,8 +150,16 @@ class _DashboardScreenState extends State<DashboardScreen>
       body: SafeArea(
         child: Column(
           children: [
-            Expanded(child: _buildBody()),
-            _buildBottomNav(),
+            Expanded(
+              child: ResponsiveCenter(
+                maxWidth: 800,
+                child: _buildBody(),
+              ),
+            ),
+            ResponsiveCenter(
+              maxWidth: 800,
+              child: _buildBottomNav(),
+            ),
           ],
         ),
       ),

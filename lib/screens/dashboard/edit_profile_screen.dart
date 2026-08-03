@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../services/auth_service.dart';
 import '../../widgets/custom_button.dart';
+import '../../widgets/responsive_center.dart';
 import '../../utils/ui_utils.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -75,31 +76,35 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           onPressed: () => Get.back(),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildLabel('FULL NAME', Icons.person_outline),
-            _buildTextField('Enter Full Name', controller: _fullNameController),
-            const SizedBox(height: 24),
-            _buildLabel('EMAIL', Icons.email_outlined),
-            _buildTextField('Email', controller: _emailController, keyboardType: TextInputType.emailAddress),
-            const SizedBox(height: 24),
-            _buildLabel('DATE OF BIRTH', Icons.calendar_today_outlined),
-            _buildTextField(
-              'DD/MM/YYYY', 
-              controller: _dobController, 
-              readOnly: true,
-              onTap: () => _selectDate(context),
+      body: SafeArea(
+        child: ResponsiveCenter(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildLabel('FULL NAME', Icons.person_outline),
+                _buildTextField('Enter Full Name', controller: _fullNameController),
+                const SizedBox(height: 24),
+                _buildLabel('EMAIL', Icons.email_outlined),
+                _buildTextField('Email', controller: _emailController, keyboardType: TextInputType.emailAddress),
+                const SizedBox(height: 24),
+                _buildLabel('DATE OF BIRTH', Icons.calendar_today_outlined),
+                _buildTextField(
+                  'DD/MM/YYYY', 
+                  controller: _dobController, 
+                  readOnly: true,
+                  onTap: () => _selectDate(context),
+                ),
+                const SizedBox(height: 40),
+                CustomButton(
+                  text: 'Save Changes',
+                  isLoading: _isLoading,
+                  onPressed: _updateProfile,
+                ),
+              ],
             ),
-            const SizedBox(height: 40),
-            CustomButton(
-              text: 'Save Changes',
-              isLoading: _isLoading,
-              onPressed: _updateProfile,
-            ),
-          ],
+          ),
         ),
       ),
     );
