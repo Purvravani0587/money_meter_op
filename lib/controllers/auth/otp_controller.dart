@@ -15,7 +15,7 @@ class OtpController extends GetxController {
     String otp = controllers.map((c) => c.text).join();
     if (otp.length == 6) {
       isLoading.value = true;
-      UIUtils.showTopMessage(Get.context!, 'Verification successful');
+      UIUtils.showTopMessage(Get.context, 'Verification successful');
       
       Future.delayed(const Duration(seconds: 1), () {
         if (flow == 'forgot_password') {
@@ -28,7 +28,7 @@ class OtpController extends GetxController {
         }
       });
     } else {
-      UIUtils.showTopMessage(Get.context!, 'Please enter 6-digit OTP', isError: true);
+      UIUtils.showTopMessage(Get.context, 'Please enter 6-digit OTP', isError: true);
     }
   }
 

@@ -54,8 +54,30 @@ class SignUpController extends GetxController {
       lastDate: maxDate,
     );
     if (picked != null) {
-      dobController.text = '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
+      dobController.text = '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
     }
+  }
+
+  String _formatDobForApi(String rawDob) {
+    rawDob = rawDob.trim();
+    if (rawDob.contains('/')) {
+      final parts = rawDob.split('/');
+      if (parts.length == 3) {
+        if (parts[0].length <= 2 && parts[2].length == 4) {
+          // DD/MM/YYYY to YYYY-MM-DD
+          return '${parts[2]}-${parts[1].padLeft(2, '0')}-${parts[0].padLeft(2, '0')}';
+        }
+      }
+    } else if (rawDob.contains('-')) {
+      final parts = rawDob.split('-');
+      if (parts.length == 3) {
+        if (parts[0].length <= 2 && parts[2].length == 4) {
+          // DD-MM-YYYY to YYYY-MM-DD
+          return '${parts[2]}-${parts[1].padLeft(2, '0')}-${parts[0].padLeft(2, '0')}';
+        }
+      }
+    }
+    return rawDob;
   }
 
   Future<void> getCurrentLocation() async {
@@ -89,9 +111,9 @@ class SignUpController extends GetxController {
       currentLongitude = position.longitude.toString();
       addressController.text = addressText.isNotEmpty ? addressText : 'Lat: ${position.latitude}, Long: ${position.longitude}';
       
-      UIUtils.showTopMessage(Get.context!, 'Current location captured');
+      UIUtils.showTopMessage(Get.context, 'Current location captured');
     } catch (e) {
-      UIUtils.showTopMessage(Get.context!, e.toString().replaceFirst('Exception: ', ''), isError: true);
+      UIUtils.showTopMessage(Get.context, e.toString().replaceFirst('Exception: ', ''), isError: true);
     } finally {
       isGettingLocation.value = false;
     }
@@ -102,33 +124,34 @@ class SignUpController extends GetxController {
         mobileController.text.trim().isEmpty ||
         dobController.text.trim().isEmpty ||
         addressController.text.trim().isEmpty) {
-      UIUtils.showTopMessage(Get.context!, 'Please fill all required fields', isError: true);
+      UIUtils.showTopMessage(Get.context, 'Please fill all required fields', isError: true);
       return;
     }
 
     if (mobileController.text.trim().length != 10) {
-      UIUtils.showTopMessage(Get.context!, 'Mobile number must be 10 digits', isError: true);
+      UIUtils.showTopMessage(Get.context, 'Mobile number must be 10 digits', isError: true);
       return;
     }
 
     if (passwordController.text.trim().isEmpty || confirmPasswordController.text.trim().isEmpty) {
-      UIUtils.showTopMessage(Get.context!, 'Please enter password', isError: true);
+      UIUtils.showTopMessage(Get.context, 'Please enter password', isError: true);
       return;
     }
     if (passwordController.text.length < 6) {
-      UIUtils.showTopMessage(Get.context!, 'Password must be at least 6 characters', isError: true);
+      UIUtils.showTopMessage(Get.context, 'Password must be at least 6 characters', isError: true);
       return;
     }
     if (passwordController.text != confirmPasswordController.text) {
-      UIUtils.showTopMessage(Get.context!, 'Passwords do not match', isError: true);
+      UIUtils.showTopMessage(Get.context, 'Passwords do not match', isError: true);
       return;
     }
 
     isLoading.value = true;
     try {
+      final formattedDob = _formatDobForApi(dobController.text);
       final result = await AuthService.register(
         fullName: fullNameController.text.trim(),
-        dob: dobController.text.trim(),
+        dob: formattedDob,
         gender: gender.value,
         email: emailController.text.trim(),
         mobile: mobileController.text.trim(),
@@ -140,10 +163,10 @@ class SignUpController extends GetxController {
         longitude: currentLongitude.isNotEmpty ? currentLongitude : '1',
       );
 
-      UIUtils.showTopMessage(Get.context!, result['message']?.toString() ?? 'Registration successful');
+      UIUtils.showTopMessage(Get.context, result['message']?.toString() ?? 'Registration successful');
       Get.to(() => OtpScreen(mobile: mobileController.text.trim(), flow: 'registration'));
     } catch (e) {
-      UIUtils.showTopMessage(Get.context!, e.toString().replaceFirst('Exception: ', ''), isError: true);
+      UIUtils.showTopMessage(Get.context, e.toString().replaceFirst('Exception: ', ''), isError: true);
     } finally {
       isLoading.value = false;
     }

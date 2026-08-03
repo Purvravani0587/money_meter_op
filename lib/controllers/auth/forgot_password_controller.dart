@@ -23,7 +23,7 @@ class ForgotPasswordController extends GetxController {
 
   Future<void> sendOtp() async {
     if (mobileController.text.trim().length != 10) {
-      UIUtils.showTopMessage(Get.context!, 'Please enter a valid 10-digit mobile number', isError: true);
+      UIUtils.showTopMessage(Get.context, 'Please enter a valid 10-digit mobile number', isError: true);
       return;
     }
 
@@ -32,14 +32,14 @@ class ForgotPasswordController extends GetxController {
       // Simulate OTP sending
       await Future.delayed(const Duration(seconds: 1));
       
-      UIUtils.showTopMessage(Get.context!, 'OTP sent successfully to ${countryCode.value} ${mobileController.text.trim()}');
+      UIUtils.showTopMessage(Get.context, 'OTP sent successfully to ${countryCode.value} ${mobileController.text.trim()}');
       
       Get.to(() => OtpScreen(
         mobile: mobileController.text.trim(),
         flow: 'forgot_password',
       ));
     } catch (e) {
-      UIUtils.showTopMessage(Get.context!, 'Failed to send OTP', isError: true);
+      UIUtils.showTopMessage(Get.context, 'Failed to send OTP', isError: true);
     } finally {
       isLoading.value = false;
     }

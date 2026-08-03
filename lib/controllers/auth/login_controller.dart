@@ -32,17 +32,17 @@ class LoginController extends GetxController {
 
   Future<void> login() async {
     if (mobileController.text.trim().isEmpty) {
-      UIUtils.showTopMessage(Get.context!, 'Please enter mobile number', isError: true);
+      UIUtils.showTopMessage(Get.context, 'Please enter mobile number', isError: true);
       return;
     }
 
     if (mobileController.text.trim().length != 10) {
-      UIUtils.showTopMessage(Get.context!, 'Mobile number must be 10 digits', isError: true);
+      UIUtils.showTopMessage(Get.context, 'Mobile number must be 10 digits', isError: true);
       return;
     }
     
     if (passwordController.text.trim().isEmpty) {
-      UIUtils.showTopMessage(Get.context!, 'Please enter password', isError: true);
+      UIUtils.showTopMessage(Get.context, 'Please enter password', isError: true);
       passwordFocusNode.requestFocus();
       return;
     }
@@ -55,10 +55,10 @@ class LoginController extends GetxController {
         password: passwordController.text.trim(),
       );
 
-      UIUtils.showTopMessage(Get.context!, result['message']?.toString() ?? 'Login successful');
+      UIUtils.showTopMessage(Get.context, result['message']?.toString() ?? 'Login successful');
       Get.offAll(() => const DashboardScreen());
     } catch (e) {
-      UIUtils.showTopMessage(Get.context!, e.toString().replaceFirst('Exception: ', ''), isError: true);
+      UIUtils.showTopMessage(Get.context, e.toString().replaceFirst('Exception: ', ''), isError: true);
     } finally {
       isLoading.value = false;
     }

@@ -17,19 +17,19 @@ class ResetPasswordController extends GetxController {
 
   Future<void> resetPassword(String mobile) async {
     if (passwordController.text.trim().isEmpty || confirmPasswordController.text.trim().isEmpty) {
-      UIUtils.showTopMessage(Get.context!, 'Please fill all fields', isError: true);
+      UIUtils.showTopMessage(Get.context, 'Please fill all fields', isError: true);
       return;
     }
 
     if (passwordController.text != confirmPasswordController.text) {
-      UIUtils.showTopMessage(Get.context!, 'Passwords do not match', isError: true);
+      UIUtils.showTopMessage(Get.context, 'Passwords do not match', isError: true);
       return;
     }
 
     String pwd = passwordController.text.trim();
     if (pwd.length < 6) {
       UIUtils.showTopMessage(
-        Get.context!,
+        Get.context,
         'Password must be at least 6 characters',
         isError: true,
       );
@@ -43,11 +43,11 @@ class ResetPasswordController extends GetxController {
         password: pwd,
       );
       
-      UIUtils.showTopMessage(Get.context!, result['message']?.toString() ?? 'Password reset successful.');
+      UIUtils.showTopMessage(Get.context, result['message']?.toString() ?? 'Password reset successful.');
 
       Get.offAll(() => const LoginScreen());
     } catch (e) {
-      UIUtils.showTopMessage(Get.context!, e.toString().replaceFirst('Exception: ', ''), isError: true);
+      UIUtils.showTopMessage(Get.context, e.toString().replaceFirst('Exception: ', ''), isError: true);
     } finally {
       isLoading.value = false;
     }
