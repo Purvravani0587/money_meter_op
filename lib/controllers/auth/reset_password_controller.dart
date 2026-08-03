@@ -22,16 +22,15 @@ class ResetPasswordController extends GetxController {
     }
 
     if (passwordController.text != confirmPasswordController.text) {
-      UIUtils.showTopMessage(Get.context!, 'PINs do not match', isError: true);
+      UIUtils.showTopMessage(Get.context!, 'Passwords do not match', isError: true);
       return;
     }
 
-    // PIN Validation: 4 digit numeric as per user request
-    String pin = passwordController.text.trim();
-    if (pin.length != 4 || !RegExp(r'^[0-9]+$').hasMatch(pin)) {
+    String pwd = passwordController.text.trim();
+    if (pwd.length < 6) {
       UIUtils.showTopMessage(
         Get.context!,
-        'PIN must be exactly 4 numeric digits',
+        'Password must be at least 6 characters',
         isError: true,
       );
       return;
@@ -41,13 +40,10 @@ class ResetPasswordController extends GetxController {
     try {
       final result = await AuthService.resetPassword(
         mobile: mobile,
-        password: pin,
+        password: pwd,
       );
       
-      UIUtils.showTopMessage(Get.context!, result['message']?.toString() ?? 'PIN reset successful.');
-      
-      // Update locally saved auth method to PIN since they just set one
-      await AuthService.saveAuthMethod(mobile, 'PIN');
+      UIUtils.showTopMessage(Get.context!, result['message']?.toString() ?? 'Password reset successful.');
 
       Get.offAll(() => const LoginScreen());
     } catch (e) {

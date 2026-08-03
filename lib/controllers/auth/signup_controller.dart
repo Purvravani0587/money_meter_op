@@ -8,8 +8,7 @@ import '../../utils/ui_utils.dart';
 import '../../screens/auth/otp_screen.dart';
 
 class SignUpController extends GetxController {
-  final nameController = TextEditingController();
-  final surnameController = TextEditingController();
+  final fullNameController = TextEditingController();
   final mobileController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
@@ -21,7 +20,6 @@ class SignUpController extends GetxController {
   final countryCode = '+91'.obs;
   final countryFlag = '🇮🇳'.obs;
   final gender = 'M'.obs;
-  final authMethod = 'PIN'.obs; // 'OTP' or 'PIN'
   final obscurePassword = true.obs;
   final obscureConfirmPassword = true.obs;
   final isLoading = false.obs;
@@ -31,7 +29,6 @@ class SignUpController extends GetxController {
   String currentLongitude = '';
 
   void setGender(String value) => gender.value = value;
-  void setAuthMethod(String value) => authMethod.value = value;
   void toggleObscurePassword() => obscurePassword.value = !obscurePassword.value;
   void toggleObscureConfirmPassword() => obscureConfirmPassword.value = !obscureConfirmPassword.value;
 
@@ -47,14 +44,16 @@ class SignUpController extends GetxController {
   }
 
   Future<void> selectDate(BuildContext context) async {
+    final now = DateTime.now();
+    // Enforce 18+ age restriction
+    final maxDate = DateTime(now.year - 18, now.month, now.day);
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: maxDate,
       firstDate: DateTime(1900),
-      lastDate: DateTime.now(),
+      lastDate: maxDate,
     );
     if (picked != null) {
-      // Format as dd/MM/yyyy as per user request
       dobController.text = '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
     }
   }
@@ -99,8 +98,7 @@ class SignUpController extends GetxController {
   }
 
   Future<void> register() async {
-    if (nameController.text.trim().isEmpty ||
-        surnameController.text.trim().isEmpty ||
+    if (fullNameController.text.trim().isEmpty ||
         mobileController.text.trim().isEmpty ||
         dobController.text.trim().isEmpty ||
         addressController.text.trim().isEmpty) {
@@ -113,34 +111,29 @@ class SignUpController extends GetxController {
       return;
     }
 
-    if (authMethod.value == 'PIN') {
-      if (passwordController.text.trim().isEmpty || confirmPasswordController.text.trim().isEmpty) {
-        UIUtils.showTopMessage(Get.context!, 'Please set your 4-digit PIN', isError: true);
-        return;
-      }
-      if (passwordController.text.length != 4 || !RegExp(r'^[0-9]+$').hasMatch(passwordController.text)) {
-        UIUtils.showTopMessage(Get.context!, 'PIN must be 4 numeric digits', isError: true);
-        return;
-      }
-      if (passwordController.text != confirmPasswordController.text) {
-        UIUtils.showTopMessage(Get.context!, 'PINs do not match', isError: true);
-        return;
-      }
+    if (passwordController.text.trim().isEmpty || confirmPasswordController.text.trim().isEmpty) {
+      UIUtils.showTopMessage(Get.context!, 'Please enter password', isError: true);
+      return;
+    }
+    if (passwordController.text.length < 6) {
+      UIUtils.showTopMessage(Get.context!, 'Password must be at least 6 characters', isError: true);
+      return;
+    }
+    if (passwordController.text != confirmPasswordController.text) {
+      UIUtils.showTopMessage(Get.context!, 'Passwords do not match', isError: true);
+      return;
     }
 
     isLoading.value = true;
     try {
-      // Save auth method preference locally so we know how to log in later
-      await AuthService.saveAuthMethod(mobileController.text.trim(), authMethod.value);
-
       final result = await AuthService.register(
-        fullName: '${nameController.text.trim()} ${surnameController.text.trim()}',
+        fullName: fullNameController.text.trim(),
         dob: dobController.text.trim(),
         gender: gender.value,
         email: emailController.text.trim(),
         mobile: mobileController.text.trim(),
-        password: authMethod.value == 'PIN' ? passwordController.text.trim() : '',
-        confirmPassword: authMethod.value == 'PIN' ? confirmPasswordController.text.trim() : '',
+        password: passwordController.text.trim(),
+        confirmPassword: confirmPasswordController.text.trim(),
         address: addressController.text.trim(),
         landmark: landmarkController.text.trim(),
         latitude: currentLatitude.isNotEmpty ? currentLatitude : '1',
@@ -158,8 +151,7 @@ class SignUpController extends GetxController {
 
   @override
   void onClose() {
-    nameController.dispose();
-    surnameController.dispose();
+    fullNameController.dispose();
     mobileController.dispose();
     emailController.dispose();
     passwordController.dispose();

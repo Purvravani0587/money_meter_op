@@ -40,6 +40,7 @@ class AuthService {
   static Future<dynamic> _post(
     Uri uri, {
     Map<String, dynamic>? body,
+    Map<String, dynamic>? queryParameters,
     String? authToken,
   }) async {
     final resolvedAuthToken = authToken ?? await getAuthToken();
@@ -52,6 +53,14 @@ class AuthService {
     if (resolvedAuthToken != null && resolvedAuthToken.isNotEmpty) {
       headers['Authorization'] = _authorizationValue(resolvedAuthToken);
     }
+
+    final resolvedUri = queryParameters == null || queryParameters.isEmpty
+        ? uri
+        : uri.replace(
+            queryParameters: queryParameters.map(
+              (key, value) => MapEntry(key, value?.toString() ?? ''),
+            ),
+          );
 
     // Convert body values to strings for form encoding
     Map<String, String>? formBody;
@@ -66,12 +75,12 @@ class AuthService {
     // Debug: show the form body being sent for easier troubleshooting
     try {
       // ignore: avoid_print
-      print('API REQ ${uri.toString()} -> $formBody');
+      print('API REQ ${resolvedUri.toString()} -> $formBody');
     } catch (_) {}
 
     http.Response response;
     try {
-      response = await http.post(uri, headers: headers, body: formBody);
+      response = await http.post(resolvedUri, headers: headers, body: formBody);
     } catch (e) {
       throw Exception('Network error: Please check your internet connection');
     }
@@ -455,6 +464,121 @@ class AuthService {
     int startRow = 0,
   }) {
     return {'familyId': familyId.toString(), 'startRow': startRow.toString()};
+  }
+
+  static Map<String, String> buildGetExpenseListQueryParameters({
+    required int familyId,
+    int startRow = 0,
+  }) {
+    return {'familyId': familyId.toString(), 'startRow': startRow.toString()};
+  }
+
+  static Map<String, String> buildFamilyIncomeListBody({
+    required int familyId,
+    required int startRow,
+  }) {
+    return {
+      'fInc_familyId': familyId.toString(),
+      'startRow': startRow.toString(),
+    };
+  }
+
+  static Map<String, String> buildFamilyIncomeViewBody({
+    required int familyId,
+    required int startRow,
+    required int incomeId,
+  }) {
+    return {
+      'fInc_familyId': familyId.toString(),
+      'startRow': startRow.toString(),
+      'fInc_id': incomeId.toString(),
+    };
+  }
+
+  static Map<String, String> buildFamilyExpenseListBody({
+    required int familyId,
+    required int startRow,
+  }) {
+    return {
+      'fex_familyId': familyId.toString(),
+      'startRow': startRow.toString(),
+    };
+  }
+
+  static Map<String, String> buildFamilyExpenseViewBody({
+    required int familyId,
+    required int startRow,
+    required int expenseId,
+  }) {
+    return {
+      'fex_familyId': familyId.toString(),
+      'startRow': startRow.toString(),
+      'fex_id': expenseId.toString(),
+    };
+  }
+
+  static Map<String, String> buildRecurringExpensesPaidBody({
+    required int familyId,
+    required int startRow,
+    required String fromDate,
+    required String toDate,
+  }) {
+    return {
+      'fex_familyId': familyId.toString(),
+      'startRow': startRow.toString(),
+      'dFromDate': fromDate,
+      'dToDate': toDate,
+    };
+  }
+
+  static Map<String, String> buildCreateExpenseMasterBody({
+    required int familyId,
+    required String expenseName,
+    required String expenseType,
+    required int cycleMonths,
+    required String startDate,
+    String? monthDuration,
+    required int amount,
+    required String nextDueDate,
+  }) {
+    final body = <String, String>{
+      'fEx_familyId': familyId.toString(),
+      'fEx_sExpName': expenseName,
+      'fEx_eExpType': expenseType,
+      'fEx_iCycleMonths': cycleMonths.toString(),
+      'fEx_dStartDate': startDate,
+      'fEx_iAmount': amount.toString(),
+      'fEx_dNextDueDate': nextDueDate,
+    };
+    body['fEx_iMonthDuration'] = monthDuration ?? '';
+    return body;
+  }
+
+  static Map<String, String> buildUpdateExpenseMasterBody({
+    required int familyId,
+    required int expenseId,
+    required String expenseName,
+    required String expenseType,
+    required int cycleMonths,
+    required String startDate,
+    String? monthDuration,
+    required int amount,
+    required String nextDueDate,
+    required String status,
+  }) {
+    final body = <String, String>{
+      'fEx_familyId': familyId.toString(),
+      'fEx_id': expenseId.toString(),
+      'fEx_sExpName': expenseName,
+      'fEx_eExpType': expenseType,
+      'fEx_iCycleMonths': cycleMonths.toString(),
+      'fEx_dStartDate': startDate,
+      'fEx_iAmount': amount.toString(),
+      'fEx_dNextDueDate': nextDueDate,
+      'fEx_eStatus': status,
+    };
+    body['fEx_iMonthDuration'] = monthDuration ?? '';
+    return body;
   }
 
   static Map<String, String> buildFamilyUnpaidExpenseBody({
@@ -902,6 +1026,161 @@ class AuthService {
 
     final items = FamilyTransactionItem.fromResponse(response);
     return items.isNotEmpty ? items.first : null;
+  }
+
+  static Future<List<FamilyTransactionItem>> getAllExpense({
+    required int familyId,
+    int startRow = 0,
+  }) async {
+    final response = await _get(
+      Uri.parse(_apiUrl('member-api/v1', 'member-expense')),
+      queryParameters: buildGetExpenseListQueryParameters(
+        familyId: familyId,
+        startRow: startRow,
+      ),
+    );
+    return FamilyTransactionItem.fromResponse(response);
+  }
+
+  static Future<FamilyTransactionItem?> getExpenseMasterDetail({
+    required int expenseId,
+  }) async {
+    final response = await _get(
+      Uri.parse(_apiUrl('member-api/v1', 'member-expense/$expenseId')),
+    );
+
+    final items = FamilyTransactionItem.fromResponse(response);
+    return items.isNotEmpty ? items.first : null;
+  }
+
+  static Future<dynamic> getFamilyIncomeList({
+    required int familyId,
+    int startRow = 0,
+  }) async {
+    return _post(
+      Uri.parse(_apiUrl('member-api/v1', 'get-familyincomelist')),
+      queryParameters: {'fInc_familyId': familyId.toString()},
+      body: buildFamilyIncomeListBody(
+        familyId: familyId,
+        startRow: startRow,
+      ),
+    );
+  }
+
+  static Future<dynamic> getFamilyIncomeView({
+    required int familyId,
+    int startRow = 0,
+    required int incomeId,
+  }) async {
+    return _post(
+      Uri.parse(_apiUrl('member-api/v1', 'get-familyincomeview')),
+      queryParameters: {'fInc_id': incomeId.toString()},
+      body: buildFamilyIncomeViewBody(
+        familyId: familyId,
+        startRow: startRow,
+        incomeId: incomeId,
+      ),
+    );
+  }
+
+  static Future<dynamic> getFamilyExpenseList({
+    required int familyId,
+    int startRow = 0,
+  }) async {
+    return _post(
+      Uri.parse(_apiUrl('member-api/v1', 'get-familyexpenselist')),
+      body: buildFamilyExpenseListBody(
+        familyId: familyId,
+        startRow: startRow,
+      ),
+    );
+  }
+
+  static Future<dynamic> getFamilyExpenseView({
+    required int familyId,
+    int startRow = 0,
+    required int expenseId,
+  }) async {
+    return _post(
+      Uri.parse(_apiUrl('member-api/v1', 'get-familyexpenseview')),
+      queryParameters: {'fex_id': expenseId.toString()},
+      body: buildFamilyExpenseViewBody(
+        familyId: familyId,
+        startRow: startRow,
+        expenseId: expenseId,
+      ),
+    );
+  }
+
+  static Future<dynamic> getRecurringExpensesPaid({
+    required int familyId,
+    int startRow = 0,
+    required String fromDate,
+    required String toDate,
+  }) async {
+    return _post(
+      Uri.parse(_apiUrl('member-api/v1', 'get-recurringrxpensespaid')),
+      body: buildRecurringExpensesPaidBody(
+        familyId: familyId,
+        startRow: startRow,
+        fromDate: fromDate,
+        toDate: toDate,
+      ),
+    );
+  }
+
+  static Future<dynamic> createExpenseMaster({
+    required int familyId,
+    required String expenseName,
+    required String expenseType,
+    required int cycleMonths,
+    required String startDate,
+    String? monthDuration,
+    required int amount,
+    required String nextDueDate,
+  }) async {
+    return _post(
+      Uri.parse(_apiUrl('member-api/v1', 'member-expense')),
+      body: buildCreateExpenseMasterBody(
+        familyId: familyId,
+        expenseName: expenseName,
+        expenseType: expenseType,
+        cycleMonths: cycleMonths,
+        startDate: startDate,
+        monthDuration: monthDuration,
+        amount: amount,
+        nextDueDate: nextDueDate,
+      ),
+    );
+  }
+
+  static Future<dynamic> updateExpenseMaster({
+    required int familyId,
+    required int expenseId,
+    required String expenseName,
+    required String expenseType,
+    required int cycleMonths,
+    required String startDate,
+    String? monthDuration,
+    required int amount,
+    required String nextDueDate,
+    required String status,
+  }) async {
+    return _patch(
+      Uri.parse(_apiUrl('member-api/v1', 'member-expense/$expenseId')),
+      body: buildUpdateExpenseMasterBody(
+        familyId: familyId,
+        expenseId: expenseId,
+        expenseName: expenseName,
+        expenseType: expenseType,
+        cycleMonths: cycleMonths,
+        startDate: startDate,
+        monthDuration: monthDuration,
+        amount: amount,
+        nextDueDate: nextDueDate,
+        status: status,
+      ),
+    );
   }
 
   static Future<String?> getNextDueDate({

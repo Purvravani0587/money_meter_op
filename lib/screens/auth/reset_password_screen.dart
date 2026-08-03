@@ -50,25 +50,20 @@ class ResetPasswordScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 40),
                 const Text(
-                  'Create New PIN',
+                  'Create New Password',
                   style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  'Set a new 4-digit PIN for your account',
+                  'Set a new password for your account',
                   style: TextStyle(color: Colors.grey, fontSize: 16),
                 ),
                 const SizedBox(height: 40),
-                _buildLabel('NEW 4-DIGIT PIN', Icons.lock_outline),
+                _buildLabel('NEW PASSWORD', Icons.lock_outline),
                 Obx(() => _buildTextField(
-                  'PIN',
+                  'Enter Password',
                   controller: controller.passwordController,
                   obscureText: controller.obscurePassword.value,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                    LengthLimitingTextInputFormatter(4),
-                  ],
                   suffixIcon: IconButton(
                     icon: Icon(
                       controller.obscurePassword.value ? Icons.visibility_off : Icons.visibility,
@@ -77,27 +72,12 @@ class ResetPasswordScreen extends StatelessWidget {
                     onPressed: controller.toggleObscurePassword,
                   ),
                 )),
-                const Padding(
-                  padding: EdgeInsets.only(top: 4.0),
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: Text(
-                      'PIN must be 4 numeric digits',
-                      style: TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.w500),
-                    ),
-                  ),
-                ),
                 const SizedBox(height: 24),
-                _buildLabel('CONFIRM PIN', Icons.lock_outline),
+                _buildLabel('CONFIRM PASSWORD', Icons.lock_outline),
                 Obx(() => _buildTextField(
-                  'PIN',
+                  'Confirm Password',
                   controller: controller.confirmPasswordController,
                   obscureText: controller.obscureConfirmPassword.value,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                    LengthLimitingTextInputFormatter(4),
-                  ],
                   suffixIcon: IconButton(
                     icon: Icon(
                       controller.obscureConfirmPassword.value ? Icons.visibility_off : Icons.visibility,
@@ -108,7 +88,7 @@ class ResetPasswordScreen extends StatelessWidget {
                 )),
                 const SizedBox(height: 40),
                 Obx(() => CustomButton(
-                  text: 'Reset PIN',
+                  text: 'Reset Password',
                   isLoading: controller.isLoading.value,
                   onPressed: () => controller.resetPassword(mobile),
                 )),

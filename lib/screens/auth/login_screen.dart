@@ -102,31 +102,21 @@ class LoginScreen extends StatelessWidget {
                   ],
                 ),
                 
-                Obx(() => controller.loginMethod.value == 'PIN' ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 24),
-                    _buildLabel('4-DIGIT PIN', Icons.lock_outline),
-                    _buildTextField(
-                      controller.passwordController.text.isEmpty ? 'PIN' : '****',
-                      controller: controller.passwordController,
-                      focusNode: controller.passwordFocusNode,
-                      obscureText: controller.obscurePassword.value,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(4),
-                      ],
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          controller.obscurePassword.value ? Icons.visibility : Icons.visibility_off,
-                          color: Colors.grey.shade700,
-                        ),
-                        onPressed: controller.toggleObscure,
-                      ),
+                const SizedBox(height: 24),
+                _buildLabel('PASSWORD', Icons.lock_outline),
+                Obx(() => _buildTextField(
+                  'Enter Password',
+                  controller: controller.passwordController,
+                  focusNode: controller.passwordFocusNode,
+                  obscureText: controller.obscurePassword.value,
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      controller.obscurePassword.value ? Icons.visibility_off : Icons.visibility,
+                      color: Colors.grey.shade700,
                     ),
-                  ],
-                ) : const SizedBox.shrink()),
+                    onPressed: controller.toggleObscure,
+                  ),
+                )),
 
                 const SizedBox(height: 16),
                 Row(
@@ -156,7 +146,7 @@ class LoginScreen extends StatelessWidget {
                     TextButton(
                       onPressed: () => Get.to(() => const ForgotPasswordScreen()),
                       child: const Text(
-                        'Forgot PIN?',
+                        'Forgot Password?',
                         style: TextStyle(
                           color: Color(0xFF6C5CE7),
                           fontWeight: FontWeight.bold,
@@ -168,7 +158,7 @@ class LoginScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 30),
                 Obx(() => CustomButton(
-                  text: controller.loginMethod.value == 'PIN' ? 'Sign In' : 'Sign In with OTP',
+                  text: 'Sign In',
                   isLoading: controller.isLoading.value,
                   onPressed: controller.login,
                 )),

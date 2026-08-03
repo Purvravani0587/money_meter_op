@@ -123,7 +123,7 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
                         Switch(
                           value: _autoRemind,
                           onChanged: (val) => setState(() => _autoRemind = val),
-                          activeColor: const Color(0xFF2D2E4D),
+                          activeThumbColor: const Color(0xFF2D2E4D),
                         ),
                       ],
                     ),
@@ -135,7 +135,7 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
                         Switch(
                           value: _unbilledByDefault,
                           onChanged: (val) => setState(() => _unbilledByDefault = val),
-                          activeColor: const Color(0xFF2D2E4D),
+                          activeThumbColor: const Color(0xFF2D2E4D),
                         ),
                       ],
                     ),

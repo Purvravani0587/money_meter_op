@@ -13,8 +13,9 @@ class _AddRecurringIncomeScreenState extends State<AddRecurringIncomeScreen> {
   final _nameController = TextEditingController();
   final _amountController = TextEditingController();
   final _categoryController = TextEditingController();
-  final _frequencyController = TextEditingController(text: 'Monthly');
   final _dueDateController = TextEditingController();
+  final List<String> _frequencies = ['Daily', 'Monthly', 'Yearly'];
+  String _selectedFrequency = 'Monthly';
   bool _autoRemind = true;
   bool _isLoading = false;
 
@@ -23,7 +24,6 @@ class _AddRecurringIncomeScreenState extends State<AddRecurringIncomeScreen> {
     _nameController.dispose();
     _amountController.dispose();
     _categoryController.dispose();
-    _frequencyController.dispose();
     _dueDateController.dispose();
     super.dispose();
   }
@@ -163,7 +163,34 @@ class _AddRecurringIncomeScreenState extends State<AddRecurringIncomeScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               _buildLabel('FREQUENCY'),
-                              _buildTextField('Monthly', controller: _frequencyController, readOnly: true),
+                              DropdownButtonFormField<String>(
+                                value: _selectedFrequency,
+                                decoration: InputDecoration(
+                                  filled: true,
+                                  fillColor: const Color(0xFFF9F9F9),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 16,
+                                  ),
+                                ),
+                                items: _frequencies
+                                    .map(
+                                      (frequency) => DropdownMenuItem(
+                                        value: frequency,
+                                        child: Text(frequency),
+                                      ),
+                                    )
+                                    .toList(),
+                                onChanged: (value) {
+                                  if (value != null) {
+                                    setState(() => _selectedFrequency = value);
+                                  }
+                                },
+                              ),
                             ],
                           ),
                         ),
@@ -188,7 +215,7 @@ class _AddRecurringIncomeScreenState extends State<AddRecurringIncomeScreen> {
                         Switch(
                           value: _autoRemind,
                           onChanged: (val) => setState(() => _autoRemind = val),
-                          activeColor: const Color(0xFF2D2E4D),
+                          activeThumbColor: const Color(0xFF2D2E4D),
                         ),
                       ],
                     ),

@@ -12,8 +12,7 @@ class EditProfileScreen extends StatefulWidget {
 }
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
-  final _nameController = TextEditingController();
-  final _surnameController = TextEditingController();
+  final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _dobController = TextEditingController();
   bool _isLoading = false;
@@ -26,20 +25,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   Future<void> _loadCurrentProfile() async {
     final fullName = await AuthService.getUserName() ?? '';
-    final mobile = await AuthService.getUserMobile() ?? '';
-    // email and dob could be stored or fetched.
-    
-    final names = fullName.split(' ');
-    _nameController.text = names.isNotEmpty ? names[0] : '';
-    _surnameController.text = names.length > 1 ? names.sublist(1).join(' ') : '';
+    _fullNameController.text = fullName;
   }
 
   Future<void> _selectDate(BuildContext context) async {
+    final now = DateTime.now();
+    final maxDate = DateTime(now.year - 18, now.month, now.day);
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: maxDate,
       firstDate: DateTime(1900),
-      lastDate: DateTime.now(),
+      lastDate: maxDate,
     );
     if (picked != null) {
       setState(() {
@@ -49,17 +45,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _updateProfile() async {
-    if (_nameController.text.trim().isEmpty || _surnameController.text.trim().isEmpty) {
-      UIUtils.showTopMessage(context, 'Name and Surname are required', isError: true);
+    if (_fullNameController.text.trim().isEmpty) {
+      UIUtils.showTopMessage(context, 'Full Name is required', isError: true);
       return;
     }
 
     setState(() => _isLoading = true);
-    // Simulation: in real app, call API to update
     await Future.delayed(const Duration(seconds: 1));
     
-    final newFullName = '${_nameController.text.trim()} ${_surnameController.text.trim()}';
-    await AuthService.saveUserName(newFullName);
+    await AuthService.saveUserName(_fullNameController.text.trim());
     
     if (mounted) {
       UIUtils.showTopMessage(context, 'Profile updated successfully');
@@ -86,11 +80,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildLabel('NAME', Icons.person_outline),
-            _buildTextField('First Name', controller: _nameController),
-            const SizedBox(height: 24),
-            _buildLabel('SURNAME', Icons.person_outline),
-            _buildTextField('Last Name', controller: _surnameController),
+            _buildLabel('FULL NAME', Icons.person_outline),
+            _buildTextField('Enter Full Name', controller: _fullNameController),
             const SizedBox(height: 24),
             _buildLabel('EMAIL', Icons.email_outlined),
             _buildTextField('Email', controller: _emailController, keyboardType: TextInputType.emailAddress),

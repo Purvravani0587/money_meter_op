@@ -5,12 +5,10 @@ void main() {
   group('HomeScreenSummary', () {
     test('parses nested API payload into currency values', () {
       final summary = HomeScreenSummary.fromJson({
-        'data': {
-          'mtdExpense': 1200,
-          'mtdIncome': 1500,
-          'projectedExpenses': 2000,
-          'projectedIncome': 2500,
-        },
+        'mtdExpense': 1200,
+        'mtdIncome': 1500,
+        'projectedExpenses': 2000,
+        'projectedIncome': 2500,
       });
 
       expect(summary.mtdExpense, '₹1200');

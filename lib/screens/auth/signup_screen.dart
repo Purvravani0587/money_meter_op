@@ -67,30 +67,8 @@ class SignUpScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 40),
                 
-                // Name and Surname split
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildLabel('NAME', Icons.person_outline),
-                          _buildTextField('First Name', controller: controller.nameController),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildLabel('SURNAME', Icons.person_outline),
-                          _buildTextField('Last Name', controller: controller.surnameController),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                _buildLabel('FULL NAME', Icons.person_outline),
+                _buildTextField('Enter Full Name', controller: controller.fullNameController),
                 
                 const SizedBox(height: 24),
                 _buildLabel('MOBILE NO.', Icons.phone_android_outlined),
@@ -152,58 +130,33 @@ class SignUpScreen extends StatelessWidget {
                 ),
 
                 const SizedBox(height: 24),
-                _buildLabel('AUTHENTICATION METHOD', Icons.security_outlined),
-                Row(
-                  children: [
-                    Obx(() => _buildRadio('4-Digit PIN', 'PIN', controller.authMethod.value, (v) => controller.setAuthMethod(v))),
-                    const SizedBox(width: 20),
-                    Obx(() => _buildRadio('OTP Only', 'OTP', controller.authMethod.value, (v) => controller.setAuthMethod(v))),
-                  ],
-                ),
-
-                Obx(() => controller.authMethod.value == 'PIN' ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 24),
-                    _buildLabel('SET 4-DIGIT PIN', Icons.lock_outline),
-                    _buildTextField(
-                      controller.passwordController.text.isEmpty ? 'Password' : '****',
-                      controller: controller.passwordController,
-                      obscureText: controller.obscurePassword.value,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(4),
-                      ],
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          controller.obscurePassword.value ? Icons.visibility_off : Icons.visibility,
-                          color: Colors.grey,
-                        ),
-                        onPressed: controller.toggleObscurePassword,
-                      ),
+                _buildLabel('PASSWORD', Icons.lock_outline),
+                Obx(() => _buildTextField(
+                  'Enter Password',
+                  controller: controller.passwordController,
+                  obscureText: controller.obscurePassword.value,
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      controller.obscurePassword.value ? Icons.visibility_off : Icons.visibility,
+                      color: Colors.grey,
                     ),
-                    const SizedBox(height: 24),
-                    _buildLabel('CONFIRM PIN', Icons.lock_outline),
-                    _buildTextField(
-                      controller.confirmPasswordController.text.isEmpty ? 'Password' : '****',
-                      controller: controller.confirmPasswordController,
-                      obscureText: controller.obscureConfirmPassword.value,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(4),
-                      ],
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          controller.obscureConfirmPassword.value ? Icons.visibility_off : Icons.visibility,
-                          color: Colors.grey,
-                        ),
-                        onPressed: controller.toggleObscureConfirmPassword,
-                      ),
+                    onPressed: controller.toggleObscurePassword,
+                  ),
+                )),
+                const SizedBox(height: 24),
+                _buildLabel('CONFIRM PASSWORD', Icons.lock_outline),
+                Obx(() => _buildTextField(
+                  'Confirm Password',
+                  controller: controller.confirmPasswordController,
+                  obscureText: controller.obscureConfirmPassword.value,
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      controller.obscureConfirmPassword.value ? Icons.visibility_off : Icons.visibility,
+                      color: Colors.grey,
                     ),
-                  ],
-                ) : const SizedBox.shrink()),
+                    onPressed: controller.toggleObscureConfirmPassword,
+                  ),
+                )),
 
                 const SizedBox(height: 24),
                 _buildLabel('EMAIL (OPTIONAL)', Icons.email_outlined),
@@ -291,8 +244,11 @@ class SignUpScreen extends StatelessWidget {
             height: 24,
             width: 24,
             child: Radio<String>(
+              // ignore: deprecated_member_use
               value: value,
+              // ignore: deprecated_member_use
               groupValue: groupValue,
+              // ignore: deprecated_member_use
               onChanged: (val) => onChanged(val!),
               activeColor: const Color(0xFF6C5CE7),
             ),

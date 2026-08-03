@@ -112,7 +112,7 @@ class _MtdIncomeScreenState extends State<MtdIncomeScreen> {
                         ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
                         : ListView.separated(
                             itemCount: _items.length,
-                            separatorBuilder: (_, __) => const Divider(height: 1),
+                            separatorBuilder: (_, _) => const Divider(height: 1),
                             itemBuilder: (context, index) {
                               final item = _items[index];
                               return _buildRow(

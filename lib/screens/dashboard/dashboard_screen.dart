@@ -2,15 +2,14 @@ import 'package:flutter/material.dart';
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../services/auth_service.dart';
-import '../../utils/ui_utils.dart';
 import '../../widgets/glass_container.dart';
 import '../api_test_screen.dart';
 import '../auth/login_screen.dart';
-import '../auth/otp_screen.dart' show OtpScreen;
 import '../unbilled_transactions_screen.dart';
 import '../mtd_income_screen.dart';
 import '../recurring_expenses_screen.dart';
 import '../recurring_income_screen.dart';
+import 'edit_profile_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -469,7 +468,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                 color: Colors.white,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   ),
@@ -702,15 +701,10 @@ class _DashboardScreenState extends State<DashboardScreen>
                 'Personal Details',
                 color: Colors.blue,
                 onTap: () {
-                  // Verify with OTP before editing profile
-                  UIUtils.showTopMessage(context, 'Sending verification OTP to $_userMobile');
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => OtpScreen(
-                        mobile: _userMobile,
-                        flow: 'profile_edit',
-                      ),
+                      builder: (context) => const EditProfileScreen(),
                     ),
                   );
                 },
@@ -736,16 +730,14 @@ class _DashboardScreenState extends State<DashboardScreen>
                 'Log Out',
                 color: Colors.red,
                 onTap: () async {
+                  final navigator = Navigator.of(context);
                   await AuthService.logout();
-                  if (context.mounted) {
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const LoginScreen(),
-                      ),
-                      (route) => false,
-                    );
-                  }
+                  navigator.pushAndRemoveUntil(
+                    MaterialPageRoute(
+                      builder: (context) => const LoginScreen(),
+                    ),
+                    (route) => false,
+                  );
                 },
               ),
             ],
@@ -1049,7 +1041,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: isTotal ? Colors.white24 : trendColor.withOpacity(0.1),
+                color: isTotal ? Colors.white24 : trendColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
@@ -1084,7 +1076,7 @@ class _DashboardScreenState extends State<DashboardScreen>
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: bg.withOpacity(0.3),
+              color: bg.withValues(alpha: 0.3),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: Colors.black87, size: 22),

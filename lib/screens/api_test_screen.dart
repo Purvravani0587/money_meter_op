@@ -146,6 +146,18 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
                       () => AuthService.getFamilyIncomeHistory(familyId: 1),
                     ),
                     _buildButton(
+                      'Family Income List',
+                      () => AuthService.getFamilyIncomeList(familyId: 1),
+                    ),
+                    _buildButton(
+                      'Family Income View',
+                      () => AuthService.getFamilyIncomeView(
+                        familyId: 1,
+                        startRow: 0,
+                        incomeId: 1,
+                      ),
+                    ),
+                    _buildButton(
                       'Family Unpaid Income',
                       () => AuthService.getFamilyUnpaidIncome(familyId: 1),
                     ),
@@ -158,12 +170,33 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
                       () => AuthService.getFamilyExpenseHistory(familyId: 1),
                     ),
                     _buildButton(
+                      'Family Expense List',
+                      () => AuthService.getFamilyExpenseList(familyId: 1),
+                    ),
+                    _buildButton(
+                      'Family Expense View',
+                      () => AuthService.getFamilyExpenseView(
+                        familyId: 1,
+                        startRow: 0,
+                        expenseId: 1,
+                      ),
+                    ),
+                    _buildButton(
                       'Family Unpaid Expense',
                       () => AuthService.getFamilyUnpaidExpense(familyId: 1),
                     ),
                     _buildButton(
                       'Family Paid Expense',
                       () => AuthService.getFamilyPaidExpense(familyId: 1),
+                    ),
+                    _buildButton(
+                      'Recurring Expenses Paid',
+                      () => AuthService.getRecurringExpensesPaid(
+                        familyId: 1,
+                        startRow: 0,
+                        fromDate: '2026-07-01',
+                        toDate: '2026-07-27',
+                      ),
                     ),
                     _buildButton(
                       'Home Screen Data',

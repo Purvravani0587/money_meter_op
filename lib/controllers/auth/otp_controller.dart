@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import '../../utils/ui_utils.dart';
 import '../../screens/auth/login_screen.dart';
 import '../../screens/auth/reset_password_screen.dart';
-import '../../screens/dashboard/edit_profile_screen.dart';
 import '../../screens/dashboard/dashboard_screen.dart';
 
 class OtpController extends GetxController {
@@ -11,7 +10,7 @@ class OtpController extends GetxController {
   final List<FocusNode> focusNodes = List.generate(6, (_) => FocusNode());
   final isLoading = false.obs;
 
-  // Flows: 'registration', 'forgot_password', 'profile_edit', 'login'
+  // Flows: 'registration', 'forgot_password', 'login'
   void verifyOtp(String mobile, String flow) {
     String otp = controllers.map((c) => c.text).join();
     if (otp.length == 6) {
@@ -21,8 +20,6 @@ class OtpController extends GetxController {
       Future.delayed(const Duration(seconds: 1), () {
         if (flow == 'forgot_password') {
           Get.off(() => ResetPasswordScreen(mobile: mobile));
-        } else if (flow == 'profile_edit') {
-          Get.off(() => const EditProfileScreen());
         } else if (flow == 'login') {
           Get.offAll(() => const DashboardScreen());
         } else {
