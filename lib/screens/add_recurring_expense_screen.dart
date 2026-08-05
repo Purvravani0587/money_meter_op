@@ -6,11 +6,13 @@ import '../widgets/responsive_center.dart';
 
 class AddRecurringExpenseScreen extends StatefulWidget {
   final FamilyTransactionItem? item;
+  final int? expenseId;
   final bool isViewOnly;
 
   const AddRecurringExpenseScreen({
     super.key,
     this.item,
+    this.expenseId,
     this.isViewOnly = false,
   });
 
@@ -87,6 +89,40 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
         }
       }
     }
+
+    final id = widget.expenseId ?? int.tryParse(widget.item?.id ?? '');
+    if (id != null) {
+      _fetchExpenseDetail(id);
+    }
+  }
+
+  Future<void> _fetchExpenseDetail(int expenseId) async {
+    try {
+      final detail = await AuthService.getOneExpense(expenseId: expenseId);
+      if (detail != null && mounted) {
+        setState(() {
+          if (detail.name.isNotEmpty && detail.name != 'Unnamed') {
+            _acNameController.text = detail.name;
+          }
+          if (detail.amount.isNotEmpty && detail.amount != '₹0') {
+            _amountController.text = detail.amount.replaceAll(RegExp(r'[^0-9]'), '');
+          }
+          if (detail.status.isNotEmpty) {
+            final s = detail.status;
+            if (s.toUpperCase().startsWith('A') || s.toLowerCase() == 'active') {
+              _status = 'Active';
+            } else {
+              _status = 'Inactive';
+            }
+          }
+          if (detail.date.isNotEmpty) {
+            _expiryDateController.text = detail.date;
+          }
+        });
+      }
+    } catch (_) {
+      // Keep pre-populated state if detail fetch fails
+    }
   }
 
   @override
@@ -146,11 +182,12 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
       final formattedExpiryDate = _formatDateForApi(_expiryDateController.text.trim());
       final statusCode = _status == 'Active' ? 'A' : 'D';
 
-      if (widget.item != null) {
-        final expenseId = int.tryParse(widget.item!.id) ?? 0;
-        await AuthService.updateExpenseMaster(
+      final targetExpenseId = widget.expenseId ?? (widget.item != null ? int.tryParse(widget.item!.id) : null);
+
+      if (targetExpenseId != null) {
+        await AuthService.editExpenseMaster(
           familyId: 1,
-          expenseId: expenseId,
+          expenseId: targetExpenseId,
           expenseName: _acNameController.text.trim(),
           expenseType: _type != '-- SELECT --' ? _type : 'E',
           cycleMonths: 1,
@@ -164,7 +201,7 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
           Navigator.pop(context, true);
         }
       } else {
-        await AuthService.createExpenseMaster(
+        await AuthService.addExpense(
           familyId: 1,
           expenseName: _acNameController.text.trim(),
           expenseType: _type != '-- SELECT --' ? _type : 'E',

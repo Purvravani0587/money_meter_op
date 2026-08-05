@@ -112,5 +112,52 @@ void main() {
       expect(query['familyId'], '1');
       expect(query['startRow'], '0');
     });
+
+    test('builds expense master create body for Add Expense (POST member-expense)', () {
+      final body = AuthService.buildCreateExpenseMasterBody(
+        familyId: 1,
+        expenseName: 'Test Bill',
+        expenseType: 'Utility',
+        cycleMonths: 1,
+        startDate: '2026-08-01',
+        amount: 1500,
+        nextDueDate: '2026-09-01',
+      );
+
+      expect(body['fEx_familyId'], '1');
+      expect(body['fEx_sExpName'], 'Test Bill');
+      expect(body['fEx_eExpType'], 'U');
+      expect(body['fEx_iAmount'], '1500');
+    });
+
+    test('builds expense master update body for Edit Expense Master (PATCH member-expense/{id})', () {
+      final body = AuthService.buildUpdateExpenseMasterBody(
+        familyId: 1,
+        expenseId: 2,
+        expenseName: 'Test Bill Updated',
+        expenseType: 'Utility',
+        cycleMonths: 1,
+        startDate: '2026-08-01',
+        amount: 1800,
+        nextDueDate: '2026-09-01',
+        status: 'A',
+      );
+
+      expect(body['fEx_familyId'], '1');
+      expect(body['fEx_id'], '2');
+      expect(body['fEx_sExpName'], 'Test Bill Updated');
+      expect(body['fEx_eExpType'], 'U');
+      expect(body['fEx_eStatus'], 'A');
+    });
+
+    test('builds expense list query parameters for View Expense Master Grid', () {
+      final params = AuthService.buildGetExpenseListQueryParameters(
+        familyId: 1,
+        startRow: 0,
+      );
+
+      expect(params['familyId'], '1');
+      expect(params['startRow'], '0');
+    });
   });
 }

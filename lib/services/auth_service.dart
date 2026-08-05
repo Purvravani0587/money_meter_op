@@ -1080,6 +1080,26 @@ class AuthService {
     return FamilyTransactionItem.fromResponse(response);
   }
 
+  /// Alias for getAllExpense - GET member-api/v1/member-expense?familyId=1&startRow=0
+  static Future<List<FamilyTransactionItem>> getExpenseMasterGrid({
+    required int familyId,
+    int startRow = 0,
+  }) => getAllExpense(familyId: familyId, startRow: startRow);
+
+  /// Raw response for View Expense Master Grid - GET member-api/v1/member-expense?familyId=1&startRow=0
+  static Future<dynamic> getExpenseMasterGridRaw({
+    required int familyId,
+    int startRow = 0,
+  }) async {
+    return _get(
+      Uri.parse(_apiUrl('member-api/v1', 'member-expense')),
+      queryParameters: buildGetExpenseListQueryParameters(
+        familyId: familyId,
+        startRow: startRow,
+      ),
+    );
+  }
+
   static Future<FamilyTransactionItem?> getExpenseMasterDetail({
     required int expenseId,
   }) async {
@@ -1089,6 +1109,20 @@ class AuthService {
 
     final items = FamilyTransactionItem.fromResponse(response);
     return items.isNotEmpty ? items.first : null;
+  }
+
+  /// Alias for getExpenseMasterDetail - GET member-api/v1/member-expense/{expenseId}
+  static Future<FamilyTransactionItem?> getOneExpense({
+    required int expenseId,
+  }) => getExpenseMasterDetail(expenseId: expenseId);
+
+  /// Raw response for Get One Expense - GET member-api/v1/member-expense/{expenseId}
+  static Future<dynamic> getExpenseMasterDetailRaw({
+    required int expenseId,
+  }) async {
+    return _get(
+      Uri.parse(_apiUrl('member-api/v1', 'member-expense/$expenseId')),
+    );
   }
 
   static Future<dynamic> getFamilyIncomeList({
@@ -1192,6 +1226,27 @@ class AuthService {
     );
   }
 
+  /// Alias for Add Expense - POST member-api/v1/member-expense
+  static Future<dynamic> addExpense({
+    required int familyId,
+    required String expenseName,
+    required String expenseType,
+    required int cycleMonths,
+    required String startDate,
+    String? monthDuration,
+    required int amount,
+    required String nextDueDate,
+  }) => createExpenseMaster(
+    familyId: familyId,
+    expenseName: expenseName,
+    expenseType: expenseType,
+    cycleMonths: cycleMonths,
+    startDate: startDate,
+    monthDuration: monthDuration,
+    amount: amount,
+    nextDueDate: nextDueDate,
+  );
+
   static Future<dynamic> updateExpenseMaster({
     required int familyId,
     required int expenseId,
@@ -1220,6 +1275,31 @@ class AuthService {
       ),
     );
   }
+
+  /// Alias for Edit Expense Master - PATCH member-api/v1/member-expense/{expenseId}
+  static Future<dynamic> editExpenseMaster({
+    required int familyId,
+    required int expenseId,
+    required String expenseName,
+    required String expenseType,
+    required int cycleMonths,
+    required String startDate,
+    String? monthDuration,
+    required int amount,
+    required String nextDueDate,
+    required String status,
+  }) => updateExpenseMaster(
+    familyId: familyId,
+    expenseId: expenseId,
+    expenseName: expenseName,
+    expenseType: expenseType,
+    cycleMonths: cycleMonths,
+    startDate: startDate,
+    monthDuration: monthDuration,
+    amount: amount,
+    nextDueDate: nextDueDate,
+    status: status,
+  );
 
   static Future<String?> getNextDueDate({
     required int familyId,

@@ -170,6 +170,43 @@ class _ApiTestScreenState extends State<ApiTestScreen> {
                       () => AuthService.getFamilyExpenseHistory(familyId: 1),
                     ),
                     _buildButton(
+                      '1. Add Expense (POST member-expense)',
+                      () => AuthService.addExpense(
+                        familyId: 1,
+                        expenseName: 'Test Electricity Bill',
+                        expenseType: 'Utility',
+                        cycleMonths: 1,
+                        startDate: '2026-08-01',
+                        amount: 1500,
+                        nextDueDate: '2026-09-01',
+                      ),
+                    ),
+                    _buildButton(
+                      '2. Get One Expense (GET member-expense/2)',
+                      () => AuthService.getExpenseMasterDetailRaw(expenseId: 2),
+                    ),
+                    _buildButton(
+                      '3. Edit Expense Master (PATCH member-expense/2)',
+                      () => AuthService.editExpenseMaster(
+                        familyId: 1,
+                        expenseId: 2,
+                        expenseName: 'Test Electricity Bill Updated',
+                        expenseType: 'Utility',
+                        cycleMonths: 1,
+                        startDate: '2026-08-01',
+                        amount: 1800,
+                        nextDueDate: '2026-09-01',
+                        status: 'A',
+                      ),
+                    ),
+                    _buildButton(
+                      '4. View Expense Master Grid (GET member-expense)',
+                      () => AuthService.getExpenseMasterGridRaw(
+                        familyId: 1,
+                        startRow: 0,
+                      ),
+                    ),
+                    _buildButton(
                       'Family Expense List',
                       () => AuthService.getFamilyExpenseList(familyId: 1),
                     ),

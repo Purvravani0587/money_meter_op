@@ -29,7 +29,7 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
       _loadError = null;
     });
     try {
-      final items = await AuthService.getAllExpense(familyId: 1);
+      final items = await AuthService.getExpenseMasterGrid(familyId: 1, startRow: 0);
       if (mounted) {
         setState(() => _items = items);
       }
