@@ -114,7 +114,7 @@ class _UnbilledTransactionsScreenState extends State<UnbilledTransactionsScreen>
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: const BoxDecoration(
-                        color: Color(0xFFF0EFFF),
+                        color: Color(0xFFEAEFF5),
                         borderRadius: BorderRadius.only(
                           topLeft: Radius.circular(24),
                           topRight: Radius.circular(24),

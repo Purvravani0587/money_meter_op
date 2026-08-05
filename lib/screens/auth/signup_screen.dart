@@ -187,7 +187,7 @@ class SignUpScreen extends StatelessWidget {
                             : const Icon(Icons.my_location, size: 18),
                         label: const Text('Use current', style: TextStyle(fontSize: 12)),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF6C5CE7),
+                          backgroundColor: const Color(0xFF2D2E4D),
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -219,7 +219,7 @@ class SignUpScreen extends StatelessWidget {
                         child: const Text(
                           'Sign in',
                           style: TextStyle(
-                            color: Color(0xFF6C5CE7),
+                            color: Color(0xFF2D2E4D),
                             fontWeight: FontWeight.bold,
                             decoration: TextDecoration.underline,
                           ),
@@ -253,7 +253,7 @@ class SignUpScreen extends StatelessWidget {
               groupValue: groupValue,
               // ignore: deprecated_member_use
               onChanged: (val) => onChanged(val!),
-              activeColor: const Color(0xFF6C5CE7),
+              activeColor: const Color(0xFF2D2E4D),
             ),
           ),
           const SizedBox(width: 8),

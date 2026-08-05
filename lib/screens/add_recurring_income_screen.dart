@@ -210,27 +210,30 @@ class _AddRecurringIncomeScreenState extends State<AddRecurringIncomeScreen> {
             : '+ Add Recurring Income';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFEBE6FF),
+      backgroundColor: const Color(0xFF2D2E4D),
       body: SafeArea(
         child: Column(
           children: [
-            // Top Lavender Header
+            // Top Navy Blue Header
             Container(
-              color: const Color(0xFFEBE6FF),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+              color: const Color(0xFF2D2E4D),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Color(0xFF1E1B4B)),
+                    icon: const Icon(Icons.arrow_back, color: Colors.white),
                     onPressed: () => Navigator.pop(context),
                   ),
                   const SizedBox(width: 4),
-                  Text(
-                    titleText,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1E1B4B),
+                  Expanded(
+                    child: Text(
+                      titleText,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
@@ -382,7 +385,7 @@ class _AddRecurringIncomeScreenState extends State<AddRecurringIncomeScreen> {
                           child: ElevatedButton(
                             onPressed: _isLoading ? null : _saveIncome,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF7C66FF),
+                              backgroundColor: const Color(0xFF2D2E4D),
                               foregroundColor: Colors.white,
                               elevation: 0,
                               shape: RoundedRectangleBorder(
@@ -464,7 +467,7 @@ class _AddRecurringIncomeScreenState extends State<AddRecurringIncomeScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFF7C66FF), width: 1.5),
+          borderSide: const BorderSide(color: Color(0xFF2D2E4D), width: 1.5),
         ),
       ),
     );
@@ -497,7 +500,7 @@ class _AddRecurringIncomeScreenState extends State<AddRecurringIncomeScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFF7C66FF), width: 1.5),
+          borderSide: const BorderSide(color: Color(0xFF2D2E4D), width: 1.5),
         ),
       ),
     );
@@ -527,7 +530,7 @@ class _AddRecurringIncomeScreenState extends State<AddRecurringIncomeScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFF7C66FF), width: 1.5),
+          borderSide: const BorderSide(color: Color(0xFF2D2E4D), width: 1.5),
         ),
       ),
       items: items

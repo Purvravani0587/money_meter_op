@@ -70,7 +70,7 @@ class OtpScreen extends StatelessWidget {
                       TextSpan(
                         text: controller.getMaskedMobile(mobile),
                         style: const TextStyle(
-                          color: Color(0xFF6C5CE7),
+                          color: Color(0xFF2D2E4D),
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -125,7 +125,7 @@ class OtpScreen extends StatelessWidget {
                     child: const Text(
                       'Resend Code',
                       style: TextStyle(
-                        color: Color(0xFF6C5CE7),
+                        color: Color(0xFF2D2E4D),
                         fontWeight: FontWeight.bold,
                         decoration: TextDecoration.underline,
                       ),

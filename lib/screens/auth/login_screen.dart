@@ -133,7 +133,7 @@ class LoginScreen extends StatelessWidget {
                             width: 24,
                             child: Checkbox(
                               value: controller.rememberMe.value,
-                              activeColor: const Color(0xFF6C5CE7),
+                              activeColor: const Color(0xFF2D2E4D),
                               onChanged: (value) => controller.toggleRememberMe(),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
@@ -150,7 +150,7 @@ class LoginScreen extends StatelessWidget {
                       child: const Text(
                         'Forgot Password?',
                         style: TextStyle(
-                          color: Color(0xFF6C5CE7),
+                          color: Color(0xFF2D2E4D),
                           fontWeight: FontWeight.bold,
                           decoration: TextDecoration.underline,
                         ),
@@ -175,7 +175,7 @@ class LoginScreen extends StatelessWidget {
                         child: const Text(
                           'Create account',
                           style: TextStyle(
-                            color: Color(0xFF6C5CE7),
+                            color: Color(0xFF2D2E4D),
                             fontWeight: FontWeight.bold,
                             decoration: TextDecoration.underline,
                           ),

@@ -399,6 +399,33 @@ class AuthService {
     };
   }
 
+  static String _normalizeDateForApi(String rawDate) {
+    final text = rawDate.trim();
+    if (text.isEmpty) {
+      return DateTime.now().toString().split(' ')[0];
+    }
+    if (text.contains('/')) {
+      final parts = text.split('/');
+      if (parts.length == 3) {
+        if (parts[0].length <= 2 && parts[2].length == 4) {
+          return '${parts[2]}-${parts[1].padLeft(2, '0')}-${parts[0].padLeft(2, '0')}';
+        }
+      }
+    }
+    return text;
+  }
+
+  static String _normalizeIncomeType(String type) {
+    final t = type.trim();
+    if (t == 'Salary') return 'S';
+    if (t == 'Business') return 'B';
+    if (t == 'Investment') return 'V';
+    if (t == 'Rental') return 'R';
+    if (t == 'Fixed') return 'F';
+    if (t.length == 1 && RegExp(r'[A-Za-z]').hasMatch(t)) return t.toUpperCase();
+    return 'I';
+  }
+
   static Map<String, String> buildCreateIncomeMasterBody({
     required int familyId,
     required String incomeName,
@@ -412,11 +439,11 @@ class AuthService {
     final body = <String, String>{
       'fInc_familyId': familyId.toString(),
       'fInc_sIncName': incomeName,
-      'fInc_eIncType': incomeType,
+      'fInc_eIncType': _normalizeIncomeType(incomeType),
       'fInc_iCycleMonths': cycleMonths.toString(),
-      'fInc_dStartDate': startDate,
+      'fInc_dStartDate': _normalizeDateForApi(startDate),
       'fInc_iAmount': amount.toString(),
-      'fInc_dNextDueDate': nextDueDate,
+      'fInc_dNextDueDate': _normalizeDateForApi(nextDueDate),
     };
     body['fInc_iMonthDuration'] = monthDuration ?? '';
     return body;
@@ -438,11 +465,11 @@ class AuthService {
       'fInc_familyId': familyId.toString(),
       'fInc_sIncName': incomeName,
       'fInc_id': incomeId.toString(),
-      'fInc_eIncType': incomeType,
+      'fInc_eIncType': _normalizeIncomeType(incomeType),
       'fInc_iCycleMonths': cycleMonths.toString(),
-      'fInc_dStartDate': startDate,
+      'fInc_dStartDate': _normalizeDateForApi(startDate),
       'fInc_iAmount': amount.toString(),
-      'fInc_dNextDueDate': nextDueDate,
+      'fInc_dNextDueDate': _normalizeDateForApi(nextDueDate),
       'fInc_eStatus': status,
     };
     body['fInc_iMonthDuration'] = monthDuration ?? '';
@@ -531,6 +558,17 @@ class AuthService {
     };
   }
 
+  static String _normalizeExpenseType(String type) {
+    final t = type.trim();
+    if (t == 'Utility') return 'U';
+    if (t == 'Loan / EMI') return 'L';
+    if (t == 'Rent') return 'R';
+    if (t == 'Insurance') return 'I';
+    if (t == 'Subscription') return 'S';
+    if (t.length == 1 && RegExp(r'[A-Za-z]').hasMatch(t)) return t.toUpperCase();
+    return 'E';
+  }
+
   static Map<String, String> buildCreateExpenseMasterBody({
     required int familyId,
     required String expenseName,
@@ -544,11 +582,11 @@ class AuthService {
     final body = <String, String>{
       'fEx_familyId': familyId.toString(),
       'fEx_sExpName': expenseName,
-      'fEx_eExpType': expenseType,
+      'fEx_eExpType': _normalizeExpenseType(expenseType),
       'fEx_iCycleMonths': cycleMonths.toString(),
-      'fEx_dStartDate': startDate,
+      'fEx_dStartDate': _normalizeDateForApi(startDate),
       'fEx_iAmount': amount.toString(),
-      'fEx_dNextDueDate': nextDueDate,
+      'fEx_dNextDueDate': _normalizeDateForApi(nextDueDate),
     };
     body['fEx_iMonthDuration'] = monthDuration ?? '';
     return body;
@@ -570,11 +608,11 @@ class AuthService {
       'fEx_familyId': familyId.toString(),
       'fEx_id': expenseId.toString(),
       'fEx_sExpName': expenseName,
-      'fEx_eExpType': expenseType,
+      'fEx_eExpType': _normalizeExpenseType(expenseType),
       'fEx_iCycleMonths': cycleMonths.toString(),
-      'fEx_dStartDate': startDate,
+      'fEx_dStartDate': _normalizeDateForApi(startDate),
       'fEx_iAmount': amount.toString(),
-      'fEx_dNextDueDate': nextDueDate,
+      'fEx_dNextDueDate': _normalizeDateForApi(nextDueDate),
       'fEx_eStatus': status,
     };
     body['fEx_iMonthDuration'] = monthDuration ?? '';

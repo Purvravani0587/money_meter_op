@@ -125,7 +125,7 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
                                 vertical: 14,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF0EFFF),
+                                color: const Color(0xFFEAEFF5),
                                 borderRadius: const BorderRadius.only(
                                   topLeft: Radius.circular(24),
                                   topRight: Radius.circular(24),
@@ -282,9 +282,11 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
               children: [
                 Text(
                   item.name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 15,
+                    fontSize: 14,
                     color: Color(0xFF2D3436),
                   ),
                 ),
@@ -316,9 +318,11 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
             flex: 3,
             child: Text(
               item.amount,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
-                fontSize: 15,
+                fontSize: 14,
                 color: Color(0xFF2D2E4D),
               ),
               textAlign: TextAlign.center,
@@ -328,32 +332,36 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
           // Column 3: Action Buttons (View, Edit, Action)
           Expanded(
             flex: 3,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                // View Button
-                IconButton(
-                  icon: const Icon(Icons.visibility_outlined, size: 20, color: Color(0xFF6C5CE7)),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  tooltip: 'View Detail',
-                  onPressed: () => _openViewScreen(item),
-                ),
-                const SizedBox(width: 12),
-                // Edit Button
-                IconButton(
-                  icon: const Icon(Icons.edit_outlined, size: 20, color: Color(0xFF2D2E4D)),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  tooltip: 'Edit',
-                  onPressed: () => _openEditScreen(item),
-                ),
-                const SizedBox(width: 12),
-                // Action Menu Button
-                PopupMenuButton<String>(
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  icon: const Icon(Icons.more_vert, size: 20, color: Colors.grey),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerRight,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  // View Button
+                  IconButton(
+                    icon: const Icon(Icons.visibility_outlined, size: 20, color: Color(0xFF2D2E4D)),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    tooltip: 'View Detail',
+                    onPressed: () => _openViewScreen(item),
+                  ),
+                  const SizedBox(width: 8),
+                  // Edit Button
+                  IconButton(
+                    icon: const Icon(Icons.edit_outlined, size: 20, color: Color(0xFF2D2E4D)),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    tooltip: 'Edit',
+                    onPressed: () => _openEditScreen(item),
+                  ),
+                  const SizedBox(width: 8),
+                  // Action Menu Button
+                  PopupMenuButton<String>(
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    icon: const Icon(Icons.more_vert, size: 20, color: Colors.grey),
                   onSelected: (value) {
                     if (value == 'view') {
                       _openViewScreen(item);
@@ -366,7 +374,7 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
                       value: 'view',
                       child: Row(
                         children: [
-                          Icon(Icons.visibility_outlined, size: 18, color: Color(0xFF6C5CE7)),
+                          Icon(Icons.visibility_outlined, size: 18, color: Color(0xFF2D2E4D)),
                           SizedBox(width: 8),
                           Text('View'),
                         ],
@@ -387,8 +395,9 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
               ],
             ),
           ),
-        ],
-      ),
-    );
+        ),
+      ],
+    ),
+  );
   }
 }

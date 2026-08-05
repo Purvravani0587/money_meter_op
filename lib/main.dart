@@ -17,7 +17,7 @@ class MyApp extends StatelessWidget {
       title: 'Money Meter',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF6C5CE7)),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2D2E4D)),
         useMaterial3: true,
       ),
       localizationsDelegates: [

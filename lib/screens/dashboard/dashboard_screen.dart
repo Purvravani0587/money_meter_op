@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
+import '../../models/api_models.dart';
 import '../../services/auth_service.dart';
 import '../../widgets/glass_container.dart';
 import '../../widgets/responsive_center.dart';
@@ -88,8 +89,16 @@ class _DashboardScreenState extends State<DashboardScreen>
 
     try {
       final summary = await AuthService.getHomeScreenData(familyId: 1);
-      final incomeItems = await AuthService.getIncomeTransactions(familyId: 1);
-      final expenseItems = await AuthService.getExpenseTransactions(familyId: 1);
+      List<FamilyTransactionItem> incomeItems = await AuthService.getIncomeTransactions(familyId: 1);
+      if (incomeItems.isEmpty) {
+        incomeItems = await AuthService.getAllIncome(familyId: 1);
+      }
+
+      List<FamilyTransactionItem> expenseItems = await AuthService.getExpenseTransactions(familyId: 1);
+      if (expenseItems.isEmpty) {
+        expenseItems = await AuthService.getAllExpense(familyId: 1);
+      }
+
       final unbilledItems = await AuthService.getUnbilledTransactions(familyId: 1);
       if (!mounted) return;
 
@@ -98,19 +107,19 @@ class _DashboardScreenState extends State<DashboardScreen>
         _mtdIncome = summary.mtdIncome;
         _projExpenses = summary.projectedExpenses;
         _projIncome = summary.projectedIncome;
-        _upcomingIncome = incomeItems.take(3).map((item) => {
+        _upcomingIncome = incomeItems.map((item) => {
           'name': item.name,
           'amount': item.amount,
           'date': item.date,
           'status': item.status,
         }).toList();
-        _upcomingExpense = expenseItems.take(3).map((item) => {
+        _upcomingExpense = expenseItems.map((item) => {
           'name': item.name,
           'amount': item.amount,
           'date': item.date,
           'status': item.status,
         }).toList();
-        _unbilledItems = unbilledItems.take(3).map((item) => {
+        _unbilledItems = unbilledItems.map((item) => {
           'name': item.name,
           'amount': item.amount,
         }).toList();
@@ -557,25 +566,27 @@ class _DashboardScreenState extends State<DashboardScreen>
               _buildMasterItem(
                 Icons.apartment,
                 'Recurring Fix Expenses',
-                onTap: () {
-                  Navigator.push(
+                onTap: () async {
+                  await Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => const RecurringExpensesScreen(),
                     ),
                   );
+                  _loadHomeScreenData();
                 },
               ),
               _buildMasterItem(
                 Icons.apartment,
                 'Recurring Fix Income',
-                onTap: () {
-                  Navigator.push(
+                onTap: () async {
+                  await Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => const RecurringIncomeScreen(),
                     ),
                   );
+                  _loadHomeScreenData();
                 },
               ),
               _buildMasterItem(
@@ -630,7 +641,7 @@ class _DashboardScreenState extends State<DashboardScreen>
           margin: const EdgeInsets.all(24),
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: const Color(0xFFF0EFFF),
+            color: const Color(0xFFEAEFF5),
             borderRadius: BorderRadius.circular(30),
           ),
           child: Row(
@@ -777,7 +788,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: const Color(0xFFF0EFFF),
+                color: const Color(0xFFEAEFF5),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: color, size: 24),
@@ -818,10 +829,10 @@ class _DashboardScreenState extends State<DashboardScreen>
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: const Color(0xFFF0EFFF),
+                color: const Color(0xFFEAEFF5),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: const Color(0xFF6C5CE7), size: 24),
+              child: Icon(icon, color: const Color(0xFF2D2E4D), size: 24),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -861,7 +872,7 @@ class _DashboardScreenState extends State<DashboardScreen>
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: const BoxDecoration(
-                  color: Color(0xFFF0EFFF),
+                  color: Color(0xFFEAEFF5),
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(16),
                     topRight: Radius.circular(16),
@@ -1025,7 +1036,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     return GlassContainer(
       padding: const EdgeInsets.all(16),
       borderRadius: 24,
-      color: isTotal ? const Color(0xFF6C5CE7) : Colors.white,
+      color: isTotal ? const Color(0xFF2D2E4D) : Colors.white,
       opacity: isTotal ? 0.8 : 0.1,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1132,7 +1143,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                     vertical: 2,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF6C5CE7),
+                    color: const Color(0xFF2D2E4D),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
