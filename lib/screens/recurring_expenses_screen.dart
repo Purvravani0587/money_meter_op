@@ -29,7 +29,7 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
       _loadError = null;
     });
     try {
-      final items = await AuthService.getExpenseTransactions(familyId: 1);
+      final items = await AuthService.getAllExpense(familyId: 1);
       if (mounted) {
         setState(() => _items = items);
       }
@@ -41,6 +41,33 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
       if (mounted) {
         setState(() => _isLoading = false);
       }
+    }
+  }
+
+  Future<void> _openViewScreen(FamilyTransactionItem item) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddRecurringExpenseScreen(
+          item: item,
+          isViewOnly: true,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openEditScreen(FamilyTransactionItem item) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddRecurringExpenseScreen(
+          item: item,
+          isViewOnly: false,
+        ),
+      ),
+    );
+    if (result == true) {
+      await _loadData();
     }
   }
 
@@ -82,58 +109,128 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
                       ],
                     ),
                   ),
-                  
+
                   Expanded(
                     child: GlassContainer(
                       margin: const EdgeInsets.symmetric(horizontal: 24),
                       borderRadius: 24,
                       child: RefreshIndicator(
                         onRefresh: _loadData,
-                        child: ListView(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          children: _isLoading
-                              ? [const Center(child: Padding(padding: EdgeInsets.all(24), child: CircularProgressIndicator(strokeWidth: 2)))]
-                              : _loadError != null
-                                  ? [
-                                      Padding(
-                                        padding: const EdgeInsets.all(24),
-                                        child: Column(
-                                          children: [
-                                            Text(
-                                              _loadError!,
-                                              textAlign: TextAlign.center,
-                                              style: const TextStyle(color: Colors.red),
-                                            ),
-                                            const SizedBox(height: 12),
-                                            OutlinedButton.icon(
-                                              onPressed: _loadData,
-                                              icon: const Icon(Icons.refresh),
-                                              label: const Text('Retry'),
-                                            ),
-                                          ],
-                                        ),
+                        child: Column(
+                          children: [
+                            // 3-Column Table Header
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 14,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF0EFFF),
+                                borderRadius: const BorderRadius.only(
+                                  topLeft: Radius.circular(24),
+                                  topRight: Radius.circular(24),
+                                ),
+                              ),
+                              child: const Row(
+                                children: [
+                                  Expanded(
+                                    flex: 4,
+                                    child: Text(
+                                      'EXPENSE NAME',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                        color: Color(0xFF2D2E4D),
                                       ),
-                                    ]
-                                  : _items.isEmpty
-                                      ? [
-                                          const Padding(
-                                            padding: EdgeInsets.all(32),
-                                            child: Center(
-                                              child: Text(
-                                                'No recurring expenses found',
-                                                style: TextStyle(color: Colors.grey),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    flex: 3,
+                                    child: Text(
+                                      'AMOUNT',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                        color: Color(0xFF2D2E4D),
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                  Expanded(
+                                    flex: 3,
+                                    child: Text(
+                                      'ACTIONS',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                        color: Color(0xFF2D2E4D),
+                                      ),
+                                      textAlign: TextAlign.right,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Divider(height: 1),
+
+                            // 3-Column Table Data
+                            Expanded(
+                              child: _isLoading
+                                  ? const Center(
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : _loadError != null
+                                  ? ListView(
+                                      physics: const AlwaysScrollableScrollPhysics(),
+                                      children: [
+                                        Padding(
+                                          padding: const EdgeInsets.all(24),
+                                          child: Column(
+                                            children: [
+                                              Text(
+                                                _loadError!,
+                                                textAlign: TextAlign.center,
+                                                style: const TextStyle(color: Colors.red),
                                               ),
+                                              const SizedBox(height: 12),
+                                              OutlinedButton.icon(
+                                                onPressed: _loadData,
+                                                icon: const Icon(Icons.refresh),
+                                                label: const Text('Retry'),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  : _items.isEmpty
+                                  ? ListView(
+                                      physics: const AlwaysScrollableScrollPhysics(),
+                                      children: const [
+                                        Padding(
+                                          padding: EdgeInsets.all(32),
+                                          child: Center(
+                                            child: Text(
+                                              'No recurring expenses found',
+                                              style: TextStyle(color: Colors.grey),
                                             ),
-                                          )
-                                        ]
-                                      : [
-                                          ..._items.map((item) => _buildItem(
-                                                Icons.receipt_long_outlined,
-                                                item.name,
-                                                item.status.isEmpty ? 'Pending' : item.status,
-                                                item.amount,
-                                              )),
-                                        ],
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  : ListView.separated(
+                                      physics: const AlwaysScrollableScrollPhysics(),
+                                      itemCount: _items.length,
+                                      separatorBuilder: (context, index) => const Divider(height: 1),
+                                      itemBuilder: (context, index) {
+                                        final item = _items[index];
+                                        return _build3ColumnRow(item);
+                                      },
+                                    ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -141,7 +238,7 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
                   const SizedBox(height: 100), // Space for FAB
                 ],
               ),
-              
+
               // FAB
               Positioned(
                 right: 24,
@@ -150,7 +247,9 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
                   onPressed: () async {
                     final result = await Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const AddRecurringExpenseScreen()),
+                      MaterialPageRoute(
+                        builder: (context) => const AddRecurringExpenseScreen(),
+                      ),
                     );
                     if (result == true) {
                       await _loadData();
@@ -167,36 +266,42 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
     );
   }
 
-  Widget _buildItem(IconData icon, String title, String status, String? amount) {
+  Widget _build3ColumnRow(FamilyTransactionItem item) {
+    final statusText = item.status.isEmpty ? 'Pending' : item.status;
+    final isActive = statusText.toUpperCase().startsWith('A') || statusText.toLowerCase() == 'active';
+
     return Padding(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF0EFFF),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: const Color(0xFF6C5CE7), size: 24),
-          ),
-          const SizedBox(width: 16),
+          // Column 1: Expense Name & Status Badge
           Expanded(
+            flex: 4,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                Text(
+                  item.name,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    color: Color(0xFF2D3436),
+                  ),
+                ),
                 const SizedBox(height: 4),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
-                    color: status == 'Active' ? Colors.green.shade50 : Colors.red.shade50,
-                    borderRadius: BorderRadius.circular(20),
+                    color: isActive ? Colors.green.shade50 : Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    status,
+                    statusText,
                     style: TextStyle(
-                      color: status == 'Active' ? Colors.green : Colors.red,
+                      color: isActive ? Colors.green : Colors.red,
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
                     ),
@@ -205,10 +310,83 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
               ],
             ),
           ),
-          if (amount != null)
-            Text(amount, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16))
-          else
-            const Icon(Icons.remove, color: Colors.grey),
+
+          // Column 2: Amount
+          Expanded(
+            flex: 3,
+            child: Text(
+              item.amount,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+                color: Color(0xFF2D2E4D),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+
+          // Column 3: Action Buttons (View, Edit, Action)
+          Expanded(
+            flex: 3,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                // View Button
+                IconButton(
+                  icon: const Icon(Icons.visibility_outlined, size: 20, color: Color(0xFF6C5CE7)),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  tooltip: 'View Detail',
+                  onPressed: () => _openViewScreen(item),
+                ),
+                const SizedBox(width: 12),
+                // Edit Button
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined, size: 20, color: Color(0xFF2D2E4D)),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  tooltip: 'Edit',
+                  onPressed: () => _openEditScreen(item),
+                ),
+                const SizedBox(width: 12),
+                // Action Menu Button
+                PopupMenuButton<String>(
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  icon: const Icon(Icons.more_vert, size: 20, color: Colors.grey),
+                  onSelected: (value) {
+                    if (value == 'view') {
+                      _openViewScreen(item);
+                    } else if (value == 'edit') {
+                      _openEditScreen(item);
+                    }
+                  },
+                  itemBuilder: (BuildContext context) => [
+                    const PopupMenuItem<String>(
+                      value: 'view',
+                      child: Row(
+                        children: [
+                          Icon(Icons.visibility_outlined, size: 18, color: Color(0xFF6C5CE7)),
+                          SizedBox(width: 8),
+                          Text('View'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem<String>(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit_outlined, size: 18, color: Color(0xFF2D2E4D)),
+                          SizedBox(width: 8),
+                          Text('Edit'),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

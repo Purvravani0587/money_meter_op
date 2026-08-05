@@ -86,42 +86,80 @@ class SignUpController extends GetxController {
     isGettingLocation.value = true;
     try {
       if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
-        UIUtils.showTopMessage(Get.context, 'Location feature is not supported on Desktop. Please enter your address manually.', isError: true);
+        UIUtils.showTopMessage(
+          Get.context,
+          'Location feature is not supported on Desktop. Please enter your address manually.',
+          isError: true,
+        );
         return;
       }
 
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) throw Exception('Location services are disabled. Please enable GPS.');
+      if (!serviceEnabled) {
+        throw Exception('Location services are disabled. Please enable GPS.');
+      }
 
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
       }
-      if (permission == LocationPermission.deniedForever) throw Exception('Location permission is permanently denied.');
-      if (permission == LocationPermission.denied) throw Exception('Location permission was denied.');
+      if (permission == LocationPermission.deniedForever) {
+        throw Exception('Location permission is permanently denied.');
+      }
+      if (permission == LocationPermission.denied) {
+        throw Exception('Location permission was denied.');
+      }
 
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
       );
 
-      final geocoding = Geocoding();
-      final placemarks = await geocoding.placemarkFromCoordinates(position.latitude, position.longitude);
-      final place = placemarks.isNotEmpty ? placemarks.first : null;
-      final addressText = [
-        place?.name,
-        place?.locality,
-        place?.administrativeArea,
-        place?.country,
-      ].whereType<String>().where((v) => v.trim().isNotEmpty).join(', ');
-
       currentLatitude = position.latitude.toString();
       currentLongitude = position.longitude.toString();
-      addressController.text = addressText.isNotEmpty ? addressText : 'Lat: ${position.latitude}, Long: ${position.longitude}';
-      
+
+      String addressText = '';
+      try {
+        final geocoding = Geocoding();
+        final placemarks = await geocoding.placemarkFromCoordinates(
+          position.latitude,
+          position.longitude,
+        );
+        if (placemarks.isNotEmpty) {
+          final place = placemarks.first;
+          final parts = [
+            place.name,
+            place.subLocality,
+            place.locality,
+            place.administrativeArea,
+            place.postalCode,
+            place.country,
+          ]
+              .where((v) => v != null && v.trim().isNotEmpty)
+              .map((v) => v!.trim())
+              .toSet()
+              .toList();
+          addressText = parts.join(', ');
+        }
+      } catch (_) {
+        // Fallback to coordinates if reverse geocoding fails or plugin is not supported
+      }
+
+      if (addressText.isEmpty) {
+        addressText =
+            'Lat: ${position.latitude.toStringAsFixed(4)}, Long: ${position.longitude.toStringAsFixed(4)}';
+      }
+
+      addressController.text = addressText;
       UIUtils.showTopMessage(Get.context, 'Current location captured');
     } catch (e) {
-      final msg = e.toString().replaceFirst('Exception: ', '');
-      final cleanMsg = msg.contains('Null check operator') ? 'Location not available on this device' : msg;
+      final msg = e
+          .toString()
+          .replaceFirst('Exception: ', '')
+          .replaceFirst('TypeError: ', '');
+      final cleanMsg =
+          (msg.contains('Null check') || msg.contains('null'))
+              ? 'Location not available on this device. Please enter address manually.'
+              : msg;
       UIUtils.showTopMessage(Get.context, cleanMsg, isError: true);
     } finally {
       isGettingLocation.value = false;

@@ -17,132 +17,6 @@ class _RecurringIncomeScreenState extends State<RecurringIncomeScreen> {
   bool _isLoading = false;
   String? _loadError;
 
-  Future<void> _editIncome(FamilyTransactionItem item) async {
-    final incomeId = int.tryParse(item.id);
-    if (incomeId == null || incomeId <= 0) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Income id is not available for this item'),
-          ),
-        );
-      }
-      return;
-    }
-
-    FamilyTransactionItem? detail;
-    String? nextDueDate;
-    try {
-      detail = await AuthService.getIncomeMasterDetail(incomeId: incomeId);
-      nextDueDate = await AuthService.getNextDueDate(
-        familyId: 1,
-        incomeId: incomeId,
-      );
-    } catch (_) {}
-
-    if (!mounted) return;
-
-    final nameController = TextEditingController(
-      text: detail?.name ?? item.name,
-    );
-    final amountController = TextEditingController(
-      text: (detail?.amount ?? item.amount).replaceAll(RegExp(r'[^0-9]'), ''),
-    );
-    final statusController = TextEditingController(
-      text: (detail?.status.isEmpty ?? true)
-          ? 'A'
-          : (detail?.status ?? item.status),
-    );
-
-    final result = await showDialog<Map<String, String>>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Edit Income Master'),
-          content: SizedBox(
-            width: 400,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(labelText: 'Income Name'),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: amountController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Amount'),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: statusController,
-                  decoration: const InputDecoration(labelText: 'Status (A/D)'),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context, {
-                  'name': nameController.text.trim(),
-                  'amount': amountController.text.trim(),
-                  'status': statusController.text.trim().isEmpty
-                      ? 'A'
-                      : statusController.text.trim(),
-                });
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (result == null) return;
-
-    setState(() => _isLoading = true);
-    try {
-      await AuthService.updateIncomeMaster(
-        familyId: 1,
-        incomeId: incomeId,
-        incomeName: result['name'] ?? item.name,
-        incomeType: 'I',
-        cycleMonths: 1,
-        startDate: DateTime.now().toString().split(' ')[0],
-        amount: int.tryParse(result['amount'] ?? '0') ?? 0,
-        nextDueDate:
-            nextDueDate ??
-            DateTime.now()
-                .add(const Duration(days: 30))
-                .toString()
-                .split(' ')[0],
-        status: (result['status'] ?? 'A').toUpperCase(),
-      );
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Income updated successfully')),
-        );
-        await _loadData();
-      }
-    } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(error.toString())));
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-
   @override
   void initState() {
     super.initState();
@@ -172,6 +46,33 @@ class _RecurringIncomeScreenState extends State<RecurringIncomeScreen> {
     }
   }
 
+  Future<void> _openViewScreen(FamilyTransactionItem item) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddRecurringIncomeScreen(
+          item: item,
+          isViewOnly: true,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openEditScreen(FamilyTransactionItem item) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddRecurringIncomeScreen(
+          item: item,
+          isViewOnly: false,
+        ),
+      ),
+    );
+    if (result == true) {
+      await _loadData();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -179,178 +80,239 @@ class _RecurringIncomeScreenState extends State<RecurringIncomeScreen> {
       body: SafeArea(
         child: ResponsiveCenter(
           child: Stack(
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      IconButton(
-                        onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.arrow_back),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                      ),
-                      const SizedBox(height: 20),
-                      const Text(
-                        'Recurring Fix Income',
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF2D2E4D),
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          icon: const Icon(Icons.arrow_back),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
                         ),
-                      ),
-                      Text(
-                        '${_items.length} income sources',
-                        style: const TextStyle(
-                          color: Colors.grey,
-                          fontSize: 16,
+                        const SizedBox(height: 20),
+                        const Text(
+                          'Recurring Fix Income',
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF2D2E4D),
+                          ),
                         ),
-                      ),
-                    ],
+                        Text(
+                          '${_items.length} income sources',
+                          style: const TextStyle(
+                            color: Colors.grey,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
 
-                Expanded(
-                  child: GlassContainer(
-                    margin: const EdgeInsets.symmetric(horizontal: 24),
-                    borderRadius: 24,
-                    child: RefreshIndicator(
-                      onRefresh: _loadData,
-                      child: ListView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        children: _isLoading
-                            ? [
-                                const Center(
-                                  child: Padding(
-                                    padding: EdgeInsets.all(24),
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
+                  Expanded(
+                    child: GlassContainer(
+                      margin: const EdgeInsets.symmetric(horizontal: 24),
+                      borderRadius: 24,
+                      child: RefreshIndicator(
+                        onRefresh: _loadData,
+                        child: Column(
+                          children: [
+                            // 3-Column Table Header
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 14,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF0EFFF),
+                                borderRadius: const BorderRadius.only(
+                                  topLeft: Radius.circular(24),
+                                  topRight: Radius.circular(24),
+                                ),
+                              ),
+                              child: const Row(
+                                children: [
+                                  Expanded(
+                                    flex: 4,
+                                    child: Text(
+                                      'INCOME NAME',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                        color: Color(0xFF2D2E4D),
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ]
-                            : _loadError != null
-                            ? [
-                                Padding(
-                                  padding: const EdgeInsets.all(24),
-                                  child: Column(
-                                    children: [
-                                      Text(
-                                        _loadError!,
-                                        textAlign: TextAlign.center,
-                                        style: const TextStyle(
-                                          color: Colors.red,
+                                  Expanded(
+                                    flex: 3,
+                                    child: Text(
+                                      'AMOUNT',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                        color: Color(0xFF2D2E4D),
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                  Expanded(
+                                    flex: 3,
+                                    child: Text(
+                                      'ACTIONS',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                        color: Color(0xFF2D2E4D),
+                                      ),
+                                      textAlign: TextAlign.right,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Divider(height: 1),
+
+                            // 3-Column Table Data
+                            Expanded(
+                              child: _isLoading
+                                  ? const Center(
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : _loadError != null
+                                  ? ListView(
+                                      physics:
+                                          const AlwaysScrollableScrollPhysics(),
+                                      children: [
+                                        Padding(
+                                          padding: const EdgeInsets.all(24),
+                                          child: Column(
+                                            children: [
+                                              Text(
+                                                _loadError!,
+                                                textAlign: TextAlign.center,
+                                                style: const TextStyle(
+                                                  color: Colors.red,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 12),
+                                              OutlinedButton.icon(
+                                                onPressed: _loadData,
+                                                icon: const Icon(Icons.refresh),
+                                                label: const Text('Retry'),
+                                              ),
+                                            ],
+                                          ),
                                         ),
-                                      ),
-                                      const SizedBox(height: 12),
-                                      OutlinedButton.icon(
-                                        onPressed: _loadData,
-                                        icon: const Icon(Icons.refresh),
-                                        label: const Text('Retry'),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ]
-                            : [
-                                ..._items.map(
-                                  (item) => GestureDetector(
-                                    onTap: () => _editIncome(item),
-                                    child: _buildItem(
-                                      Icons.work_outline,
-                                      item.name,
-                                      item.status.isEmpty
-                                          ? 'Pending'
-                                          : item.status,
-                                      item.amount,
+                                      ],
+                                    )
+                                  : _items.isEmpty
+                                  ? ListView(
+                                      physics:
+                                          const AlwaysScrollableScrollPhysics(),
+                                      children: const [
+                                        Padding(
+                                          padding: EdgeInsets.all(32),
+                                          child: Center(
+                                            child: Text(
+                                              'No recurring income sources found',
+                                              style: TextStyle(color: Colors.grey),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  : ListView.separated(
+                                      physics:
+                                          const AlwaysScrollableScrollPhysics(),
+                                      itemCount: _items.length,
+                                      separatorBuilder:
+                                          (context, index) =>
+                                              const Divider(height: 1),
+                                      itemBuilder: (context, index) {
+                                        final item = _items[index];
+                                        return _build3ColumnRow(item);
+                                      },
                                     ),
-                                  ),
-                                ),
-                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 100),
-              ],
-            ),
-
-            Positioned(
-              right: 24,
-              bottom: 24,
-              child: FloatingActionButton(
-                onPressed: () async {
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const AddRecurringIncomeScreen(),
-                    ),
-                  );
-                  if (result == true) {
-                    await _loadData();
-                  }
-                },
-                backgroundColor: const Color(0xFF2D2E4D),
-                child: const Icon(Icons.add, color: Colors.white),
+                  const SizedBox(height: 100),
+                ],
               ),
-            ),
-          ],
+
+              Positioned(
+                right: 24,
+                bottom: 24,
+                child: FloatingActionButton(
+                  onPressed: () async {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AddRecurringIncomeScreen(),
+                      ),
+                    );
+                    if (result == true) {
+                      await _loadData();
+                    }
+                  },
+                  backgroundColor: const Color(0xFF2D2E4D),
+                  child: const Icon(Icons.add, color: Colors.white),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
-  Widget _buildItem(
-    IconData icon,
-    String title,
-    String status,
-    String? amount,
-  ) {
+  Widget _build3ColumnRow(FamilyTransactionItem item) {
+    final statusText = item.status.isEmpty ? 'Pending' : item.status;
+    final isActive = statusText.toUpperCase().startsWith('A') || statusText.toLowerCase() == 'active';
+
     return Padding(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF0EFFF),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: const Color(0xFF6C5CE7), size: 24),
-          ),
-          const SizedBox(width: 16),
+          // Column 1: Income Name & Status Badge
           Expanded(
+            flex: 4,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
+                  item.name,
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                    fontSize: 15,
+                    color: Color(0xFF2D3436),
                   ),
                 ),
                 const SizedBox(height: 4),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
+                    horizontal: 8,
                     vertical: 2,
                   ),
                   decoration: BoxDecoration(
-                    color: status == 'Active'
-                        ? Colors.green.shade50
-                        : Colors.red.shade50,
-                    borderRadius: BorderRadius.circular(20),
+                    color: isActive ? Colors.green.shade50 : Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    status,
+                    statusText,
                     style: TextStyle(
-                      color: status == 'Active' ? Colors.green : Colors.red,
+                      color: isActive ? Colors.green : Colors.red,
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
                     ),
@@ -359,13 +321,83 @@ class _RecurringIncomeScreenState extends State<RecurringIncomeScreen> {
               ],
             ),
           ),
-          if (amount != null)
-            Text(
-              amount,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            )
-          else
-            const Icon(Icons.remove, color: Colors.grey),
+
+          // Column 2: Amount
+          Expanded(
+            flex: 3,
+            child: Text(
+              item.amount,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+                color: Color(0xFF2D2E4D),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+
+          // Column 3: Action Buttons (View, Edit, Action)
+          Expanded(
+            flex: 3,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                // View Button
+                IconButton(
+                  icon: const Icon(Icons.visibility_outlined, size: 20, color: Color(0xFF6C5CE7)),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  tooltip: 'View Detail',
+                  onPressed: () => _openViewScreen(item),
+                ),
+                const SizedBox(width: 12),
+                // Edit Button
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined, size: 20, color: Color(0xFF2D2E4D)),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  tooltip: 'Edit',
+                  onPressed: () => _openEditScreen(item),
+                ),
+                const SizedBox(width: 12),
+                // Action Menu Button
+                PopupMenuButton<String>(
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  icon: const Icon(Icons.more_vert, size: 20, color: Colors.grey),
+                  onSelected: (value) {
+                    if (value == 'view') {
+                      _openViewScreen(item);
+                    } else if (value == 'edit') {
+                      _openEditScreen(item);
+                    }
+                  },
+                  itemBuilder: (BuildContext context) => [
+                    const PopupMenuItem<String>(
+                      value: 'view',
+                      child: Row(
+                        children: [
+                          Icon(Icons.visibility_outlined, size: 18, color: Color(0xFF6C5CE7)),
+                          SizedBox(width: 8),
+                          Text('View'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem<String>(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit_outlined, size: 18, color: Color(0xFF2D2E4D)),
+                          SizedBox(width: 8),
+                          Text('Edit'),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

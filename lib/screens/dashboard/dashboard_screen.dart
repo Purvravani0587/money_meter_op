@@ -374,8 +374,20 @@ class _DashboardScreenState extends State<DashboardScreen>
                     child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
                   )
                 else ...[
+                  if (_upcomingExpense.isEmpty &&
+                      _upcomingIncome.isEmpty &&
+                      _unbilledItems.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 24),
+                      child: Center(
+                        child: Text(
+                          'No recurring items found',
+                          style: TextStyle(color: Colors.grey, fontSize: 14),
+                        ),
+                      ),
+                    ),
                   ..._upcomingExpense.map((item) => _buildListItem(
-                        Icons.cake_outlined,
+                        Icons.receipt_long_outlined,
                         item['name'] ?? 'Expense',
                         item['date'] ?? 'Next 7 days',
                         item['amount'] ?? '₹0',
@@ -383,43 +395,34 @@ class _DashboardScreenState extends State<DashboardScreen>
                         Colors.red.shade50,
                       )),
                   ..._upcomingIncome.map((item) => _buildListItem(
-                        Icons.cake_outlined,
+                        Icons.work_outline,
                         item['name'] ?? 'Income',
                         item['date'] ?? 'Next 7 days',
                         item['amount'] ?? '₹0',
                         0,
                         Colors.green.shade50,
                       )),
-                ],
-                GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            const UnbilledTransactionsScreen(),
+                  if (_unbilledItems.isNotEmpty)
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                const UnbilledTransactionsScreen(),
+                          ),
+                        );
+                      },
+                      child: _buildListItem(
+                        Icons.receipt_long_outlined,
+                        'Unbilled',
+                        'Awaiting invoice',
+                        _unbilledItems.map((item) => item['amount'] ?? '₹0').join(', '),
+                        _unbilledItems.length,
+                        Colors.blue.shade50,
                       ),
-                    );
-                  },
-                  child: _buildListItem(
-                    Icons.receipt_long_outlined,
-                    'Unbilled',
-                    'Awaiting invoice',
-                    _unbilledItems.isNotEmpty
-                        ? _unbilledItems.map((item) => item['amount'] ?? '₹0').join(', ')
-                        : '₹0',
-                    _unbilledItems.length,
-                    Colors.blue.shade50,
-                  ),
-                ),
-                _buildListItem(
-                  Icons.hourglass_empty,
-                  'Unpaid Recurring',
-                  'Action needed',
-                  '₹36,480',
-                  8,
-                  Colors.orange.shade50,
-                ),
+                    ),
+                ],
               ],
             ),
           ),

@@ -169,7 +169,7 @@ class SignUpScreen extends StatelessWidget {
                   children: [
                     Expanded(
                       child: _buildTextField(
-                        'Enter Your Address',
+                        'Enter your full address',
                         controller: controller.addressController,
                       ),
                     ),
@@ -200,7 +200,7 @@ class SignUpScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
                 _buildLabel('LANDMARK (OPTIONAL)', Icons.flag_outlined),
-                _buildTextField('Enter Your Landmark', controller: controller.landmarkController),
+                _buildTextField('Enter landmark (e.g. Near City Park)', controller: controller.landmarkController),
                 
                 const SizedBox(height: 40),
                 Obx(() => CustomButton(
