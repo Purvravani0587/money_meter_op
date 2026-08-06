@@ -89,18 +89,21 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
       _status = 'Inactive';
     }
 
-    // Start Date
-    if (item.startDate.isNotEmpty) {
-      _startDateController.text = item.startDate;
-    } else if (item.date.isNotEmpty) {
-      _startDateController.text = item.date;
-    }
-
     // Expiry / Maturity Date
     if (item.endDate.isNotEmpty) {
       _expiryDateController.text = item.endDate;
     } else if (item.date.isNotEmpty) {
       _expiryDateController.text = item.date;
+    }
+
+    // Start Date (Never leave blank)
+    if (item.startDate.isNotEmpty) {
+      _startDateController.text = item.startDate;
+    } else if (_expiryDateController.text.isNotEmpty) {
+      _startDateController.text = _expiryDateController.text;
+    } else {
+      final now = DateTime.now();
+      _startDateController.text = '${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year}';
     }
 
     // Type
@@ -120,6 +123,9 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
         _type = item.type;
       }
     }
+    if (_type == '-- SELECT --') {
+      _type = 'Utility';
+    }
 
     // Payment Cycle
     if (item.paymentCycle.isNotEmpty) {
@@ -137,6 +143,9 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
       } else if (_paymentCycleOptions.contains(c)) {
         _paymentCycle = c;
       }
+    }
+    if (_paymentCycle == '--SELECT--' || _paymentCycle == 'Select Payment Cycle') {
+      _paymentCycle = 'Monthly';
     }
 
     // Beneficiary Details
@@ -583,8 +592,9 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
     required List<String> items,
     required ValueChanged<String?>? onChanged,
   }) {
+    final validValue = items.contains(value) ? value : items.first;
     return DropdownButtonFormField<String>(
-      initialValue: items.contains(value) ? value : items.first,
+      value: validValue,
       onChanged: onChanged,
       style: const TextStyle(fontSize: 14, color: Color(0xFF2D3436)),
       icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF666666)),

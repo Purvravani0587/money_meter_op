@@ -94,18 +94,21 @@ class _AddRecurringIncomeScreenState extends State<AddRecurringIncomeScreen> {
       _status = 'Inactive';
     }
 
-    // Start Date
-    if (item.startDate.isNotEmpty) {
-      _startDateController.text = item.startDate;
-    } else if (item.date.isNotEmpty) {
-      _startDateController.text = item.date;
-    }
-
     // End Date
     if (item.endDate.isNotEmpty) {
       _endDateController.text = item.endDate;
     } else if (item.date.isNotEmpty) {
       _endDateController.text = item.date;
+    }
+
+    // Start Date (Never leave blank)
+    if (item.startDate.isNotEmpty) {
+      _startDateController.text = item.startDate;
+    } else if (_endDateController.text.isNotEmpty) {
+      _startDateController.text = _endDateController.text;
+    } else {
+      final now = DateTime.now();
+      _startDateController.text = '${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year}';
     }
 
     // Income Type
@@ -122,6 +125,9 @@ class _AddRecurringIncomeScreenState extends State<AddRecurringIncomeScreen> {
       } else if (_incomeTypeOptions.contains(item.type)) {
         _incomeType = item.type;
       }
+    }
+    if (_incomeType == '-- SELECT --') {
+      _incomeType = 'Salary';
     }
 
     // Payment Cycle
@@ -141,12 +147,18 @@ class _AddRecurringIncomeScreenState extends State<AddRecurringIncomeScreen> {
         _paymentCycle = c;
       }
     }
+    if (_paymentCycle == 'Select Payment Cycle' || _paymentCycle == '--SELECT--') {
+      _paymentCycle = 'Monthly';
+    }
 
     // Payment Mode
     if (item.paymentMode.isNotEmpty) {
       if (_paymentModeOptions.contains(item.paymentMode)) {
         _paymentMode = item.paymentMode;
       }
+    }
+    if (_paymentMode == '-- SELECT --') {
+      _paymentMode = 'Bank Transfer';
     }
 
     // Description
@@ -583,8 +595,9 @@ class _AddRecurringIncomeScreenState extends State<AddRecurringIncomeScreen> {
     required List<String> items,
     required ValueChanged<String?>? onChanged,
   }) {
+    final validValue = items.contains(value) ? value : items.first;
     return DropdownButtonFormField<String>(
-      initialValue: items.contains(value) ? value : items.first,
+      value: validValue,
       onChanged: onChanged,
       style: const TextStyle(fontSize: 14, color: Color(0xFF2D3436)),
       icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF666666)),
