@@ -65,29 +65,7 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
   void initState() {
     super.initState();
     if (widget.item != null) {
-      _acNameController.text = widget.item!.name;
-      _amountController.text = widget.item!.amount.replaceAll(RegExp(r'[^0-9]'), '');
-
-      final statusRaw = widget.item!.status;
-      if (statusRaw.toUpperCase().startsWith('A') || statusRaw.toLowerCase() == 'active') {
-        _status = 'Active';
-      } else if (statusRaw.isNotEmpty) {
-        _status = 'Inactive';
-      }
-
-      if (widget.item!.date.isNotEmpty) {
-        final rawDate = widget.item!.date;
-        if (rawDate.contains('/')) {
-          final parts = rawDate.split('/');
-          if (parts.length == 3) {
-            _expiryDateController.text = '${parts[0].padLeft(2, '0')}/${parts[1].padLeft(2, '0')}/${parts[2]}';
-          } else {
-            _expiryDateController.text = rawDate;
-          }
-        } else {
-          _expiryDateController.text = rawDate;
-        }
-      }
+      _populateFromItem(widget.item!);
     }
 
     final id = widget.expenseId ?? int.tryParse(widget.item?.id ?? '');
@@ -96,28 +74,83 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
     }
   }
 
+  void _populateFromItem(FamilyTransactionItem item) {
+    if (item.name.isNotEmpty && item.name != 'Unnamed') {
+      _acNameController.text = item.name;
+    }
+    if (item.amount.isNotEmpty && item.amount != '₹0') {
+      _amountController.text = item.amount.replaceAll(RegExp(r'[^0-9]'), '');
+    }
+
+    final statusRaw = item.status;
+    if (statusRaw.toUpperCase().startsWith('A') || statusRaw.toLowerCase() == 'active') {
+      _status = 'Active';
+    } else if (statusRaw.isNotEmpty) {
+      _status = 'Inactive';
+    }
+
+    // Start Date
+    if (item.startDate.isNotEmpty) {
+      _startDateController.text = item.startDate;
+    } else if (item.date.isNotEmpty) {
+      _startDateController.text = item.date;
+    }
+
+    // Expiry / Maturity Date
+    if (item.endDate.isNotEmpty) {
+      _expiryDateController.text = item.endDate;
+    } else if (item.date.isNotEmpty) {
+      _expiryDateController.text = item.date;
+    }
+
+    // Type
+    if (item.type.isNotEmpty) {
+      final t = item.type.toUpperCase();
+      if (t == 'E' || item.type.contains('Utility')) {
+        _type = 'Utility';
+      } else if (t == 'L' || item.type.contains('Loan')) {
+        _type = 'Loan / EMI';
+      } else if (t == 'R' || item.type.contains('Rent')) {
+        _type = 'Rent';
+      } else if (t == 'I' || item.type.contains('Insurance')) {
+        _type = 'Insurance';
+      } else if (t == 'S' || item.type.contains('Subscription')) {
+        _type = 'Subscription';
+      } else if (_typeOptions.contains(item.type)) {
+        _type = item.type;
+      }
+    }
+
+    // Payment Cycle
+    if (item.paymentCycle.isNotEmpty) {
+      final c = item.paymentCycle;
+      if (c == '1' || c.toLowerCase().contains('month')) {
+        _paymentCycle = 'Monthly';
+      } else if (c == '3' || c.toLowerCase().contains('quarter')) {
+        _paymentCycle = 'Quarterly';
+      } else if (c == '12' || c.toLowerCase().contains('year')) {
+        _paymentCycle = 'Yearly';
+      } else if (c.toLowerCase().contains('week')) {
+        _paymentCycle = 'Weekly';
+      } else if (c.toLowerCase().contains('day')) {
+        _paymentCycle = 'Daily';
+      } else if (_paymentCycleOptions.contains(c)) {
+        _paymentCycle = c;
+      }
+    }
+
+    // Beneficiary Details
+    if (item.description.isNotEmpty) {
+      _beneficiaryController.text = item.description;
+    }
+  }
+
   Future<void> _fetchExpenseDetail(int expenseId) async {
     try {
       final detail = await AuthService.getOneExpense(expenseId: expenseId);
       if (detail != null && mounted) {
         setState(() {
-          if (detail.name.isNotEmpty && detail.name != 'Unnamed') {
-            _acNameController.text = detail.name;
-          }
-          if (detail.amount.isNotEmpty && detail.amount != '₹0') {
-            _amountController.text = detail.amount.replaceAll(RegExp(r'[^0-9]'), '');
-          }
-          if (detail.status.isNotEmpty) {
-            final s = detail.status;
-            if (s.toUpperCase().startsWith('A') || s.toLowerCase() == 'active') {
-              _status = 'Active';
-            } else {
-              _status = 'Inactive';
-            }
-          }
-          if (detail.date.isNotEmpty) {
-            _expiryDateController.text = detail.date;
-          }
+          _populateFromItem(detail);
         });
       }
     } catch (_) {

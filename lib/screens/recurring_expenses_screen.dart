@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import '../models/api_models.dart';
 import '../services/auth_service.dart';
+import '../utils/ui_utils.dart';
 import '../widgets/glass_container.dart';
 import '../widgets/responsive_center.dart';
 import 'add_recurring_expense_screen.dart';
+import 'mtd_income_screen.dart';
 
 class RecurringExpensesScreen extends StatefulWidget {
   const RecurringExpensesScreen({super.key});
@@ -23,18 +25,23 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
     _loadData();
   }
 
-  Future<void> _loadData() async {
-    setState(() {
-      _isLoading = true;
-      _loadError = null;
-    });
+  Future<void> _loadData({bool showLoading = true}) async {
+    if (_items.isEmpty || showLoading) {
+      setState(() {
+        _isLoading = true;
+        _loadError = null;
+      });
+    }
     try {
       final items = await AuthService.getExpenseMasterGrid(familyId: 1, startRow: 0);
       if (mounted) {
-        setState(() => _items = items);
+        setState(() {
+          _items = items;
+          _loadError = null;
+        });
       }
     } catch (error) {
-      if (mounted) {
+      if (mounted && _items.isEmpty) {
         setState(() => _loadError = error.toString().replaceFirst('Exception: ', ''));
       }
     } finally {
@@ -67,7 +74,7 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
       ),
     );
     if (result == true) {
-      await _loadData();
+      await _loadData(showLoading: false);
     }
   }
 
@@ -252,7 +259,7 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
                       ),
                     );
                     if (result == true) {
-                      await _loadData();
+                      await _loadData(showLoading: false);
                     }
                   },
                   backgroundColor: const Color(0xFF2D2E4D),
@@ -329,75 +336,285 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
             ),
           ),
 
-          // Column 3: Action Buttons (View, Edit, Action)
+          // Column 3: Action Button
           Expanded(
             flex: 3,
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
+            child: Align(
               alignment: Alignment.centerRight,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  // View Button
-                  IconButton(
-                    icon: const Icon(Icons.visibility_outlined, size: 20, color: Color(0xFF2D2E4D)),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    tooltip: 'View Detail',
-                    onPressed: () => _openViewScreen(item),
-                  ),
-                  const SizedBox(width: 8),
-                  // Edit Button
-                  IconButton(
-                    icon: const Icon(Icons.edit_outlined, size: 20, color: Color(0xFF2D2E4D)),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    tooltip: 'Edit',
-                    onPressed: () => _openEditScreen(item),
-                  ),
-                  const SizedBox(width: 8),
-                  // Action Menu Button
-                  PopupMenuButton<String>(
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    icon: const Icon(Icons.more_vert, size: 20, color: Colors.grey),
-                  onSelected: (value) {
-                    if (value == 'view') {
-                      _openViewScreen(item);
-                    } else if (value == 'edit') {
-                      _openEditScreen(item);
-                    }
-                  },
-                  itemBuilder: (BuildContext context) => [
-                    const PopupMenuItem<String>(
-                      value: 'view',
-                      child: Row(
-                        children: [
-                          Icon(Icons.visibility_outlined, size: 18, color: Color(0xFF2D2E4D)),
-                          SizedBox(width: 8),
-                          Text('View'),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem<String>(
-                      value: 'edit',
-                      child: Row(
-                        children: [
-                          Icon(Icons.edit_outlined, size: 18, color: Color(0xFF2D2E4D)),
-                          SizedBox(width: 8),
-                          Text('Edit'),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+              child: _buildActionButton(item),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButton(FamilyTransactionItem item) {
+    return PopupMenuButton<String>(
+      padding: EdgeInsets.zero,
+      offset: const Offset(0, 36),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      elevation: 4,
+      onSelected: (value) {
+        if (value == 'view') {
+          _openViewScreen(item);
+        } else if (value == 'edit') {
+          _openEditScreen(item);
+        } else if (value == 'close') {
+          _toggleStatus(item);
+        } else if (value == 'history') {
+          _showHistoryBottomSheet(item);
+        } else if (value == 'transaction') {
+          _openTransactions(item);
+        } else if (value == 'party') {
+          _showPartyDetailsBottomSheet(item);
+        }
+      },
+      itemBuilder: (BuildContext context) => [
+        const PopupMenuItem<String>(
+          value: 'view',
+          child: Row(
+            children: [
+              Icon(Icons.visibility_outlined, size: 18, color: Color(0xFF2D2E4D)),
+              SizedBox(width: 10),
+              Text('View', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+            ],
+          ),
+        ),
+        const PopupMenuItem<String>(
+          value: 'edit',
+          child: Row(
+            children: [
+              Icon(Icons.edit_outlined, size: 18, color: Color(0xFF2D2E4D)),
+              SizedBox(width: 10),
+              Text('Edit', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+            ],
+          ),
+        ),
+        const PopupMenuItem<String>(
+          value: 'close',
+          child: Row(
+            children: [
+              Icon(Icons.highlight_off_outlined, size: 18, color: Color(0xFF2D2E4D)),
+              SizedBox(width: 10),
+              Text('Mark as Closed', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+            ],
+          ),
+        ),
+        const PopupMenuItem<String>(
+          value: 'history',
+          child: Row(
+            children: [
+              Icon(Icons.history, size: 18, color: Color(0xFF2D2E4D)),
+              SizedBox(width: 10),
+              Text('History', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+            ],
+          ),
+        ),
+        const PopupMenuItem<String>(
+          value: 'transaction',
+          child: Row(
+            children: [
+              Icon(Icons.account_balance_outlined, size: 18, color: Color(0xFF2D2E4D)),
+              SizedBox(width: 10),
+              Text('Transaction', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+            ],
+          ),
+        ),
+        const PopupMenuItem<String>(
+          value: 'party',
+          child: Row(
+            children: [
+              Icon(Icons.person_outline, size: 18, color: Color(0xFF2D2E4D)),
+              SizedBox(width: 10),
+              Text('Party Details', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+            ],
           ),
         ),
       ],
-    ),
-  );
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: const Color(0xFF7C5CFC),
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF7C5CFC).withValues(alpha: 0.3),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Action',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+            ),
+            SizedBox(width: 4),
+            Icon(
+              Icons.keyboard_arrow_down,
+              color: Colors.white,
+              size: 16,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _toggleStatus(FamilyTransactionItem item) async {
+    final isCurrentlyActive = item.status.toUpperCase().startsWith('A') || item.status.toLowerCase() == 'active';
+    final newStatus = isCurrentlyActive ? 'D' : 'A';
+    final actionLabel = newStatus == 'D' ? 'Mark as Closed' : 'Activate';
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('$actionLabel Expense'),
+        content: Text('Are you sure you want to ${actionLabel.toLowerCase()} "${item.name}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2D2E4D)),
+            child: Text(actionLabel, style: const TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        final expenseId = int.tryParse(item.id) ?? 0;
+        await AuthService.editExpenseMaster(
+          familyId: 1,
+          expenseId: expenseId,
+          expenseName: item.name,
+          expenseType: item.type.isNotEmpty ? item.type : 'E',
+          cycleMonths: 1,
+          startDate: item.startDate,
+          amount: int.tryParse(item.amount.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0,
+          nextDueDate: item.endDate,
+          status: newStatus,
+        );
+        if (mounted) {
+          UIUtils.showTopMessage(context, 'Status updated successfully');
+          _loadData(showLoading: false);
+        }
+      } catch (e) {
+        if (mounted) {
+          UIUtils.showTopMessage(context, e.toString().replaceFirst('Exception: ', ''), isError: true);
+        }
+      }
+    }
+  }
+
+  void _showHistoryBottomSheet(FamilyTransactionItem item) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.history, color: Color(0xFF7C5CFC)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'History - ${item.name}',
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF2D2E4D)),
+                  ),
+                ),
+              ],
+            ),
+            const Divider(height: 24),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.check_circle_outline, color: Colors.green),
+              title: Text('Amount: ${item.amount}'),
+              subtitle: Text('Date: ${item.date.isNotEmpty ? item.date : "N/A"} • Status: ${item.status.isNotEmpty ? item.status : "Active"}'),
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _openTransactions(FamilyTransactionItem item) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const MtdIncomeScreen()),
+    );
+  }
+
+  void _showPartyDetailsBottomSheet(FamilyTransactionItem item) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.person_outline, color: Color(0xFF7C5CFC)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Party Details',
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF2D2E4D)),
+                  ),
+                ),
+              ],
+            ),
+            const Divider(height: 24),
+            _buildPartyRow('Expense Name', item.name),
+            _buildPartyRow('Amount / Balance', item.amount),
+            _buildPartyRow('Status', item.status.isNotEmpty ? item.status : 'Active'),
+            if (item.type.isNotEmpty) _buildPartyRow('Type', item.type),
+            if (item.startDate.isNotEmpty) _buildPartyRow('Start Date', item.startDate),
+            if (item.endDate.isNotEmpty) _buildPartyRow('End Date', item.endDate),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPartyRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 14)),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF2D2E4D))),
+        ],
+      ),
+    );
   }
 }

@@ -70,29 +70,101 @@ class _AddRecurringIncomeScreenState extends State<AddRecurringIncomeScreen> {
   void initState() {
     super.initState();
     if (widget.item != null) {
-      _sourceNameController.text = widget.item!.name;
-      _amountController.text = widget.item!.amount.replaceAll(RegExp(r'[^0-9]'), '');
-      
-      final statusRaw = widget.item!.status;
-      if (statusRaw.toUpperCase().startsWith('A') || statusRaw.toLowerCase() == 'active') {
-        _status = 'Active';
-      } else if (statusRaw.isNotEmpty) {
-        _status = 'Inactive';
-      }
+      _populateFromItem(widget.item!);
+    }
 
-      if (widget.item!.date.isNotEmpty) {
-        final rawDate = widget.item!.date;
-        if (rawDate.contains('/')) {
-          final parts = rawDate.split('/');
-          if (parts.length == 3) {
-            _endDateController.text = '${parts[0].padLeft(2, '0')}/${parts[1].padLeft(2, '0')}/${parts[2]}';
-          } else {
-            _endDateController.text = rawDate;
-          }
-        } else {
-          _endDateController.text = rawDate;
-        }
+    final id = int.tryParse(widget.item?.id ?? '');
+    if (id != null) {
+      _fetchIncomeDetail(id);
+    }
+  }
+
+  void _populateFromItem(FamilyTransactionItem item) {
+    if (item.name.isNotEmpty && item.name != 'Unnamed') {
+      _sourceNameController.text = item.name;
+    }
+    if (item.amount.isNotEmpty && item.amount != '₹0') {
+      _amountController.text = item.amount.replaceAll(RegExp(r'[^0-9]'), '');
+    }
+
+    final statusRaw = item.status;
+    if (statusRaw.toUpperCase().startsWith('A') || statusRaw.toLowerCase() == 'active') {
+      _status = 'Active';
+    } else if (statusRaw.isNotEmpty) {
+      _status = 'Inactive';
+    }
+
+    // Start Date
+    if (item.startDate.isNotEmpty) {
+      _startDateController.text = item.startDate;
+    } else if (item.date.isNotEmpty) {
+      _startDateController.text = item.date;
+    }
+
+    // End Date
+    if (item.endDate.isNotEmpty) {
+      _endDateController.text = item.endDate;
+    } else if (item.date.isNotEmpty) {
+      _endDateController.text = item.date;
+    }
+
+    // Income Type
+    if (item.type.isNotEmpty) {
+      final t = item.type.toUpperCase();
+      if (t == 'S' || item.type.contains('Salary')) {
+        _incomeType = 'Salary';
+      } else if (t == 'B' || item.type.contains('Business')) {
+        _incomeType = 'Business';
+      } else if (t == 'V' || item.type.contains('Investment')) {
+        _incomeType = 'Investment';
+      } else if (t == 'R' || item.type.contains('Rental')) {
+        _incomeType = 'Rental';
+      } else if (_incomeTypeOptions.contains(item.type)) {
+        _incomeType = item.type;
       }
+    }
+
+    // Payment Cycle
+    if (item.paymentCycle.isNotEmpty) {
+      final c = item.paymentCycle;
+      if (c == '1' || c.toLowerCase().contains('month')) {
+        _paymentCycle = 'Monthly';
+      } else if (c == '3' || c.toLowerCase().contains('quarter')) {
+        _paymentCycle = 'Quarterly';
+      } else if (c == '12' || c.toLowerCase().contains('year')) {
+        _paymentCycle = 'Yearly';
+      } else if (c.toLowerCase().contains('week')) {
+        _paymentCycle = 'Weekly';
+      } else if (c.toLowerCase().contains('day')) {
+        _paymentCycle = 'Daily';
+      } else if (_paymentCycleOptions.contains(c)) {
+        _paymentCycle = c;
+      }
+    }
+
+    // Payment Mode
+    if (item.paymentMode.isNotEmpty) {
+      if (_paymentModeOptions.contains(item.paymentMode)) {
+        _paymentMode = item.paymentMode;
+      }
+    }
+
+    // Description
+    if (item.description.isNotEmpty) {
+      _descriptionController.text = item.description;
+    }
+  }
+
+  Future<void> _fetchIncomeDetail(int incomeId) async {
+    try {
+      final detail = await AuthService.getIncomeMasterDetail(incomeId: incomeId);
+      if (detail != null && mounted) {
+        setState(() {
+          _populateFromItem(detail);
+        });
+      }
+    } catch (_) {
+      // Keep pre-populated state if fetch fails
     }
   }
 

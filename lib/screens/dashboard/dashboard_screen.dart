@@ -81,11 +81,13 @@ class _DashboardScreenState extends State<DashboardScreen>
     }
   }
 
-  Future<void> _loadHomeScreenData() async {
-    setState(() {
-      _isLoadingHomeData = true;
-      _isLoadingTransactions = true;
-    });
+  Future<void> _loadHomeScreenData({bool showLoading = true}) async {
+    if (showLoading && _mtdExpense == '₹0' && _upcomingIncome.isEmpty) {
+      setState(() {
+        _isLoadingHomeData = true;
+        _isLoadingTransactions = true;
+      });
+    }
 
     try {
       final summary = await AuthService.getHomeScreenData(familyId: 1);
@@ -123,20 +125,10 @@ class _DashboardScreenState extends State<DashboardScreen>
           'name': item.name,
           'amount': item.amount,
         }).toList();
+        _isLoadingHomeData = false;
+        _isLoadingTransactions = false;
       });
     } catch (_) {
-      if (mounted) {
-        setState(() {
-          _mtdExpense = '₹0';
-          _mtdIncome = '₹0';
-          _projExpenses = '₹0';
-          _projIncome = '₹0';
-          _upcomingIncome = [];
-          _upcomingExpense = [];
-          _unbilledItems = [];
-        });
-      }
-    } finally {
       if (mounted) {
         setState(() {
           _isLoadingHomeData = false;
@@ -176,18 +168,15 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   Widget _buildBody() {
-    switch (_selectedIndex) {
-      case 0:
-        return _buildHomeContent();
-      case 1:
-        return _buildInvoicesContent();
-      case 2:
-        return _buildMastersContent();
-      case 3:
-        return _buildProfileContent();
-      default:
-        return _buildHomeContent();
-    }
+    return IndexedStack(
+      index: _selectedIndex,
+      children: [
+        _buildHomeContent(),
+        _buildInvoicesContent(),
+        _buildMastersContent(),
+        _buildProfileContent(),
+      ],
+    );
   }
 
   Widget _buildHomeContent() {
@@ -567,26 +556,30 @@ class _DashboardScreenState extends State<DashboardScreen>
                 Icons.apartment,
                 'Recurring Fix Expenses',
                 onTap: () async {
-                  await Navigator.push(
+                  final result = await Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => const RecurringExpensesScreen(),
                     ),
                   );
-                  _loadHomeScreenData();
+                  if (result == true) {
+                    _loadHomeScreenData(showLoading: false);
+                  }
                 },
               ),
               _buildMasterItem(
                 Icons.apartment,
                 'Recurring Fix Income',
                 onTap: () async {
-                  await Navigator.push(
+                  final result = await Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => const RecurringIncomeScreen(),
                     ),
                   );
-                  _loadHomeScreenData();
+                  if (result == true) {
+                    _loadHomeScreenData(showLoading: false);
+                  }
                 },
               ),
               _buildMasterItem(

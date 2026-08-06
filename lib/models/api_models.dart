@@ -69,6 +69,13 @@ class FamilyTransactionItem {
     required this.amount,
     required this.remaining,
     required this.status,
+    this.startDate = '',
+    this.endDate = '',
+    this.type = '',
+    this.paymentCycle = '',
+    this.paymentMode = '',
+    this.description = '',
+    this.rawJson,
   });
 
   final String id;
@@ -77,6 +84,13 @@ class FamilyTransactionItem {
   final String amount;
   final String remaining;
   final String status;
+  final String startDate;
+  final String endDate;
+  final String type;
+  final String paymentCycle;
+  final String paymentMode;
+  final String description;
+  final Map<String, dynamic>? rawJson;
 
   static String _normalizeCurrency(dynamic value) {
     if (value == null) return '₹0';
@@ -146,6 +160,39 @@ class FamilyTransactionItem {
   }
 
   factory FamilyTransactionItem.fromJson(Map<String, dynamic> json) {
+    final rawDateStr = _extractString(json, [
+      'date',
+      'entryDate',
+      'createdAt',
+      'transactionDate',
+      'paymentDate',
+      'dueDate',
+      'fInc_dDate',
+      'fInc_dNextDueDate',
+      'fex_dDate',
+      'fex_dNextDueDate',
+    ], defaultValue: '');
+
+    final rawStartDateStr = _extractString(json, [
+      'fInc_dStartDate',
+      'fex_dStartDate',
+      'startDate',
+      'dStartDate',
+      'sDate',
+      'start_date',
+    ], defaultValue: rawDateStr);
+
+    final rawEndDateStr = _extractString(json, [
+      'fInc_dNextDueDate',
+      'fex_dNextDueDate',
+      'fInc_dEndDate',
+      'fex_dEndDate',
+      'endDate',
+      'nextDueDate',
+      'dNextDueDate',
+      'dueDate',
+    ], defaultValue: rawDateStr);
+
     return FamilyTransactionItem(
       id: _extractString(json, [
         'id',
@@ -167,20 +214,7 @@ class FamilyTransactionItem {
         'fInc_sIncName',
         'fex_sName',
       ], defaultValue: 'Unnamed'),
-      date: _normalizeDate(
-        _extractString(json, [
-          'date',
-          'entryDate',
-          'createdAt',
-          'transactionDate',
-          'paymentDate',
-          'dueDate',
-          'fInc_dDate',
-          'fInc_dStartDate',
-          'fInc_dNextDueDate',
-          'fex_dDate',
-        ], defaultValue: ''),
-      ),
+      date: _normalizeDate(rawDateStr),
       amount: _extractCurrency(json, [
         'amount',
         'totalAmount',
@@ -192,6 +226,7 @@ class FamilyTransactionItem {
         'fInc_nAmount',
         'fInc_iAmount',
         'fex_nAmount',
+        'fex_iAmount',
         'value',
       ]),
       remaining: _extractCurrency(json, [
@@ -204,6 +239,46 @@ class FamilyTransactionItem {
         'dueAmount',
       ]),
       status: _extractStatus(json),
+      startDate: _normalizeDate(rawStartDateStr),
+      endDate: _normalizeDate(rawEndDateStr),
+      type: _extractString(json, [
+        'fInc_eIncType',
+        'fex_eExpenseType',
+        'incomeType',
+        'expenseType',
+        'type',
+        'eIncType',
+        'eExpenseType',
+        'eType',
+      ], defaultValue: ''),
+      paymentCycle: _extractString(json, [
+        'fInc_iCycleMonths',
+        'fex_iCycleMonths',
+        'cycleMonths',
+        'paymentCycle',
+        'cycle',
+        'iCycleMonths',
+      ], defaultValue: ''),
+      paymentMode: _extractString(json, [
+        'paymentMode',
+        'mode',
+        'pMode',
+        'fInc_ePaymentMode',
+        'fex_ePaymentMode',
+        'payMode',
+      ], defaultValue: ''),
+      description: _extractString(json, [
+        'description',
+        'remarks',
+        'details',
+        'beneficiary',
+        'beneficiaryDetails',
+        'note',
+        'notes',
+        'fInc_sDescription',
+        'fex_sDescription',
+      ], defaultValue: ''),
+      rawJson: json,
     );
   }
 
