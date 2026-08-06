@@ -213,7 +213,7 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
 
     if (_acNameController.text.trim().isEmpty ||
         _amountController.text.trim().isEmpty) {
-      UIUtils.showTopMessage(context, 'Please enter A/C Name and Amount', isError: true);
+      UIUtils.showTopMessage(context, 'Please enter Name and Amount', isError: true);
       return;
     }
 
@@ -341,10 +341,10 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
                         ),
                         const SizedBox(height: 16),
 
-                        // 2. A/C Name
-                        _buildLabel('A/C Name'),
+                        // 2. Name
+                        _buildLabel('Name'),
                         _buildTextField(
-                          'Enter A/C Name',
+                          'Enter Name',
                           controller: _acNameController,
                           readOnly: widget.isViewOnly,
                         ),
