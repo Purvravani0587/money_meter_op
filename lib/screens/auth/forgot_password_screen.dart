@@ -4,12 +4,24 @@ import 'package:get/get.dart';
 import '../../controllers/auth/forgot_password_controller.dart';
 import '../../widgets/custom_button.dart';
 
-class ForgotPasswordScreen extends StatelessWidget {
+class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
 
   @override
+  State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
+}
+
+class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
+  late final ForgotPasswordController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = Get.put(ForgotPasswordController());
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final controller = Get.put(ForgotPasswordController());
 
     return Scaffold(
       backgroundColor: Colors.white,

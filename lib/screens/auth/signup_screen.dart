@@ -5,14 +5,24 @@ import '../../controllers/auth/signup_controller.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/responsive_center.dart';
 
-class SignUpScreen extends StatelessWidget {
+class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // Ensuring controller is initialized
-    final controller = Get.put(SignUpController());
+  State<SignUpScreen> createState() => _SignUpScreenState();
+}
 
+class _SignUpScreenState extends State<SignUpScreen> {
+  late final SignUpController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = Get.put(SignUpController());
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(

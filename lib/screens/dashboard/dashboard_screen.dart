@@ -1025,46 +1025,55 @@ class _DashboardScreenState extends State<DashboardScreen>
     String trend,
     Color trendColor,
   ) {
-    bool isTotal = label.contains('MTD INCOME');
-    return GlassContainer(
+    return Container(
       padding: const EdgeInsets.all(16),
-      borderRadius: 24,
-      color: isTotal ? const Color(0xFF2D2E4D) : Colors.white,
-      opacity: isTotal ? 0.8 : 0.1,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
             label,
-            style: TextStyle(
-              fontSize: 10,
+            style: const TextStyle(
+              fontSize: 11,
               fontWeight: FontWeight.bold,
-              color: isTotal ? Colors.white70 : Colors.grey,
+              color: Color(0xFF64748B),
+              letterSpacing: 0.5,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             amount,
-            style: TextStyle(
-              fontSize: 20,
+            style: const TextStyle(
+              fontSize: 22,
               fontWeight: FontWeight.bold,
-              color: isTotal ? Colors.white : const Color(0xFF2D2E4D),
+              color: Color(0xFF2D2E4D),
             ),
           ),
           if (trend.isNotEmpty) ...[
             const SizedBox(height: 6),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
-                color: isTotal ? Colors.white24 : trendColor.withValues(alpha: 0.1),
+                color: trendColor.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
                 trend,
                 style: TextStyle(
                   fontSize: 10,
-                  color: isTotal ? Colors.white : trendColor,
+                  color: trendColor,
                   fontWeight: FontWeight.bold,
                 ),
               ),

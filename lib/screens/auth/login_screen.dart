@@ -7,12 +7,24 @@ import '../../widgets/responsive_center.dart';
 import 'signup_screen.dart';
 import 'forgot_password_screen.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
   @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  late final LoginController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = Get.put(LoginController());
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final controller = Get.put(LoginController());
 
     return Scaffold(
       backgroundColor: Colors.white,

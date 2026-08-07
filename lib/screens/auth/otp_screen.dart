@@ -4,7 +4,7 @@ import '../../controllers/auth/otp_controller.dart';
 import '../../widgets/custom_button.dart';
 import '../../utils/ui_utils.dart';
 
-class OtpScreen extends StatelessWidget {
+class OtpScreen extends StatefulWidget {
   final String mobile;
   final String flow; // 'registration', 'forgot_password', 'profile_edit'
 
@@ -15,10 +15,21 @@ class OtpScreen extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    // Delete existing controller to avoid state carryover
+  State<OtpScreen> createState() => _OtpScreenState();
+}
+
+class _OtpScreenState extends State<OtpScreen> {
+  late final OtpController controller;
+
+  @override
+  void initState() {
+    super.initState();
     Get.delete<OtpController>();
-    final controller = Get.put(OtpController());
+    controller = Get.put(OtpController());
+  }
+
+  @override
+  Widget build(BuildContext context) {
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -68,7 +79,7 @@ class OtpScreen extends StatelessWidget {
                     style: const TextStyle(color: Colors.grey, fontSize: 16),
                     children: [
                       TextSpan(
-                        text: controller.getMaskedMobile(mobile),
+                        text: controller.getMaskedMobile(widget.mobile),
                         style: const TextStyle(
                           color: Color(0xFF2D2E4D),
                           fontWeight: FontWeight.bold,
@@ -114,7 +125,7 @@ class OtpScreen extends StatelessWidget {
                 Obx(() => CustomButton(
                   text: 'Verify',
                   isLoading: controller.isLoading.value,
-                  onPressed: () => controller.verifyOtp(mobile, flow),
+                  onPressed: () => controller.verifyOtp(widget.mobile, widget.flow),
                 )),
                 const SizedBox(height: 24),
                 Center(

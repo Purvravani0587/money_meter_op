@@ -4,13 +4,25 @@ import 'package:get/get.dart';
 import '../../controllers/auth/reset_password_controller.dart';
 import '../../widgets/custom_button.dart';
 
-class ResetPasswordScreen extends StatelessWidget {
+class ResetPasswordScreen extends StatefulWidget {
   final String mobile;
   const ResetPasswordScreen({super.key, required this.mobile});
 
   @override
+  State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
+}
+
+class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
+  late final ResetPasswordController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = Get.put(ResetPasswordController());
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final controller = Get.put(ResetPasswordController());
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -90,7 +102,7 @@ class ResetPasswordScreen extends StatelessWidget {
                 Obx(() => CustomButton(
                   text: 'Reset Password',
                   isLoading: controller.isLoading.value,
-                  onPressed: () => controller.resetPassword(mobile),
+                  onPressed: () => controller.resetPassword(widget.mobile),
                 )),
               ],
             ),
