@@ -70,6 +70,28 @@ void main() {
       expect(items.single.date, '01/08/2026');
       expect(items.single.status, 'A');
     });
+
+    test('parses unwrapped member-expense/2 response directly', () {
+      final items = FamilyTransactionItem.fromResponse({
+        'fex_id': 2,
+        'fex_sName': 'Rent C.G. Office',
+        'fex_iAmount': 8000,
+        'fex_dStartDate': '2026-04-01',
+        'fex_dNextDueDate': '2026-09-01',
+        'fex_eExpenseType': 'R',
+        'fex_iCycleMonths': 1,
+        'fex_eStatus': 'A',
+      });
+
+      expect(items, hasLength(1));
+      expect(items.single.id, '2');
+      expect(items.single.name, 'Rent C.G. Office');
+      expect(items.single.amount, '₹8000');
+      expect(items.single.startDate, '01/04/2026');
+      expect(items.single.endDate, '01/09/2026');
+      expect(items.single.type, 'R');
+      expect(items.single.status, 'A');
+    });
   });
 
   group('Expense API Request Builders', () {

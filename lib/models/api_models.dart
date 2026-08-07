@@ -150,6 +150,7 @@ class FamilyTransactionItem {
       'state',
       'fInc_eStatus',
       'fex_eStatus',
+      'fEx_eStatus',
     ], defaultValue: '');
     if (status.isNotEmpty) return status;
     if (json['isPaid'] == true) return 'Paid';
@@ -171,11 +172,13 @@ class FamilyTransactionItem {
       'fInc_dNextDueDate',
       'fex_dDate',
       'fex_dNextDueDate',
+      'fEx_dNextDueDate',
     ], defaultValue: '');
 
     final rawStartDateStr = _extractString(json, [
       'fInc_dStartDate',
       'fex_dStartDate',
+      'fEx_dStartDate',
       'startDate',
       'dStartDate',
       'sDate',
@@ -185,8 +188,10 @@ class FamilyTransactionItem {
     final rawEndDateStr = _extractString(json, [
       'fInc_dNextDueDate',
       'fex_dNextDueDate',
+      'fEx_dNextDueDate',
       'fInc_dEndDate',
       'fex_dEndDate',
+      'fEx_dEndDate',
       'endDate',
       'nextDueDate',
       'dNextDueDate',
@@ -198,6 +203,7 @@ class FamilyTransactionItem {
         'id',
         'fInc_id',
         'fex_id',
+        'fEx_id',
         'incomeId',
         'expenseId',
         'transactionId',
@@ -213,6 +219,8 @@ class FamilyTransactionItem {
         'fInc_sName',
         'fInc_sIncName',
         'fex_sName',
+        'fex_sExpName',
+        'fEx_sExpName',
       ], defaultValue: 'Unnamed'),
       date: _normalizeDate(rawDateStr),
       amount: _extractCurrency(json, [
@@ -227,6 +235,8 @@ class FamilyTransactionItem {
         'fInc_iAmount',
         'fex_nAmount',
         'fex_iAmount',
+        'fEx_nAmount',
+        'fEx_iAmount',
         'value',
       ]),
       remaining: _extractCurrency(json, [
@@ -244,6 +254,7 @@ class FamilyTransactionItem {
       type: _extractString(json, [
         'fInc_eIncType',
         'fex_eExpenseType',
+        'fEx_eExpType',
         'incomeType',
         'expenseType',
         'type',
@@ -254,6 +265,7 @@ class FamilyTransactionItem {
       paymentCycle: _extractString(json, [
         'fInc_iCycleMonths',
         'fex_iCycleMonths',
+        'fEx_iCycleMonths',
         'cycleMonths',
         'paymentCycle',
         'cycle',
@@ -265,6 +277,7 @@ class FamilyTransactionItem {
         'pMode',
         'fInc_ePaymentMode',
         'fex_ePaymentMode',
+        'fEx_ePaymentMode',
         'payMode',
       ], defaultValue: ''),
       description: _extractString(json, [
@@ -277,6 +290,7 @@ class FamilyTransactionItem {
         'notes',
         'fInc_sDescription',
         'fex_sDescription',
+        'fEx_sDescription',
       ], defaultValue: ''),
       rawJson: json,
     );
@@ -356,8 +370,18 @@ class FamilyTransactionItem {
         return fromResponse(nestedList);
       }
 
-      // Also support endpoints that return an unwrapped income record.
-      if (map.containsKey('fInc_id') || map.containsKey('incomeId')) {
+      // Also support endpoints that return an unwrapped income or expense record.
+      if (map.containsKey('fInc_id') ||
+          map.containsKey('incomeId') ||
+          map.containsKey('fex_id') ||
+          map.containsKey('fEx_id') ||
+          map.containsKey('expenseId') ||
+          map.containsKey('fex_sName') ||
+          map.containsKey('fex_sExpName') ||
+          map.containsKey('fEx_sExpName') ||
+          map.containsKey('fInc_sName') ||
+          map.containsKey('fInc_sIncName') ||
+          map.containsKey('id')) {
         return [FamilyTransactionItem.fromJson(map)];
       }
     }
