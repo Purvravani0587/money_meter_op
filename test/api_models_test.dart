@@ -17,6 +17,20 @@ void main() {
       expect(summary.projectedExpenses, '₹2000');
       expect(summary.projectedIncome, '₹2500');
     });
+
+    test('parses snake_case and alternative keys correctly', () {
+      final summary = HomeScreenSummary.fromJson({
+        'mtd_expense': '1250.50',
+        'mtd_income': '1800.00',
+        'projected_expense': '2100',
+        'projected_income': '2600',
+      });
+
+      expect(summary.mtdExpense, '₹1250.50');
+      expect(summary.mtdIncome, '₹1800');
+      expect(summary.projectedExpenses, '₹2100');
+      expect(summary.projectedIncome, '₹2600');
+    });
   });
 
   group('FamilyTransactionItem', () {

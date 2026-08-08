@@ -18,7 +18,6 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _navigateToNext() async {
-    await Future.delayed(const Duration(seconds: 3));
     final token = await AuthService.getAuthToken();
     if (!mounted) return;
     

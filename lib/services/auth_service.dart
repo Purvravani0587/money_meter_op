@@ -138,12 +138,15 @@ class AuthService {
       }
 
       final collected = <String>[];
-      if (decoded.containsKey('errors'))
+      if (decoded.containsKey('errors')) {
         collected.addAll(collectMessages(decoded['errors']));
-      if (decoded.containsKey('data'))
+      }
+      if (decoded.containsKey('data')) {
         collected.addAll(collectMessages(decoded['data']));
-      if (decoded.containsKey('validation'))
+      }
+      if (decoded.containsKey('validation')) {
         collected.addAll(collectMessages(decoded['validation']));
+      }
 
       collected.addAll(collectMessages(decoded));
 
@@ -286,12 +289,15 @@ class AuthService {
       }
 
       final collected = <String>[];
-      if (decoded.containsKey('errors'))
+      if (decoded.containsKey('errors')) {
         collected.addAll(collectMessages(decoded['errors']));
-      if (decoded.containsKey('data'))
+      }
+      if (decoded.containsKey('data')) {
         collected.addAll(collectMessages(decoded['data']));
-      if (decoded.containsKey('validation'))
+      }
+      if (decoded.containsKey('validation')) {
         collected.addAll(collectMessages(decoded['validation']));
+      }
 
       collected.addAll(collectMessages(decoded));
 
@@ -356,7 +362,13 @@ class AuthService {
   }
 
   static Map<String, String> buildHomeScreenDataBody({required int familyId}) {
-    return {'fInc_familyId': familyId.toString()};
+    return {
+      'fInc_familyId': familyId.toString(),
+      'fex_familyId': familyId.toString(),
+      'fEx_familyId': familyId.toString(),
+      'familyId': familyId.toString(),
+      'family_id': familyId.toString(),
+    };
   }
 
   static Map<String, String> buildFamilyIncomeHistoryBody({
@@ -386,6 +398,7 @@ class AuthService {
     return {
       'fInc_familyId': familyId.toString(),
       'startRow': startRow.toString(),
+      'fex_familyId': familyId.toString(),
     };
   }
 
@@ -477,13 +490,17 @@ class AuthService {
   }
 
   static Map<String, String> buildGetNextDueDateBody({
-    required int familyId,
-    required int incomeId,
+    int? familyId,
+    int? incomeId,
+    String? startDate,
+    int? cycleMonth,
   }) {
-    return {
-      'fInc_familyId': familyId.toString(),
-      'fInc_id': incomeId.toString(),
-    };
+    final body = <String, String>{};
+    if (familyId != null) body['fInc_familyId'] = familyId.toString();
+    if (incomeId != null) body['fInc_id'] = incomeId.toString();
+    if (startDate != null) body['startDate'] = startDate;
+    if (cycleMonth != null) body['cycleMonth'] = cycleMonth.toString();
+    return body;
   }
 
   static Map<String, String> buildGetIncomeListQueryParameters({
@@ -652,9 +669,12 @@ class AuthService {
     if (decoded is Map<String, dynamic>) {
       // look for common token locations
       String? token;
-      if (decoded.containsKey('token')) token = decoded['token']?.toString();
-      if (token == null && decoded.containsKey('access_token'))
+      if (decoded.containsKey('token')) {
+        token = decoded['token']?.toString();
+      }
+      if (token == null && decoded.containsKey('access_token')) {
         token = decoded['access_token']?.toString();
+      }
       if (token == null &&
           decoded.containsKey('data') &&
           decoded['data'] is Map) {
@@ -666,11 +686,15 @@ class AuthService {
       }
       // Try to extract and save the user's name from common response shapes
       String? name;
-      if (decoded.containsKey('name')) name = decoded['name']?.toString();
-      if (name == null && decoded.containsKey('fu_sName'))
+      if (decoded.containsKey('name')) {
+        name = decoded['name']?.toString();
+      }
+      if (name == null && decoded.containsKey('fu_sName')) {
         name = decoded['fu_sName']?.toString();
-      if (name == null && decoded.containsKey('fullName'))
+      }
+      if (name == null && decoded.containsKey('fullName')) {
         name = decoded['fullName']?.toString();
+      }
       if (name == null &&
           decoded.containsKey('data') &&
           decoded['data'] is Map) {
@@ -736,6 +760,7 @@ class AuthService {
   static const String _kAuthTokenKey = 'auth_token';
   static const String _kUserNameKey = 'user_name';
   static const String _kUserMobileKey = 'user_mobile';
+  static const String _kFamilyIdKey = 'family_id';
   static const String _kAuthMethodPrefix = 'auth_method_';
 
   static Future<SharedPreferences> getSharedPreferences() async {
@@ -821,6 +846,22 @@ class AuthService {
     } catch (_) {}
   }
 
+  static Future<void> saveFamilyId(int familyId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(_kFamilyIdKey, familyId);
+    } catch (_) {}
+  }
+
+  static Future<int> getFamilyId() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getInt(_kFamilyIdKey) ?? 1;
+    } catch (_) {
+      return 1;
+    }
+  }
+
   static Future<Map<String, dynamic>> merchantLogin({
     required String username,
     required String password,
@@ -868,10 +909,12 @@ class AuthService {
     // If registration returns a name or token, persist them
     if (decoded is Map<String, dynamic>) {
       String? name;
-      if (decoded.containsKey('fu_sName'))
+      if (decoded.containsKey('fu_sName')) {
         name = decoded['fu_sName']?.toString();
-      if (name == null && decoded.containsKey('name'))
+      }
+      if (name == null && decoded.containsKey('name')) {
         name = decoded['name']?.toString();
+      }
       if (name == null &&
           decoded.containsKey('data') &&
           decoded['data'] is Map) {
@@ -881,9 +924,12 @@ class AuthService {
       if (name != null && name.isNotEmpty) await saveUserName(name);
 
       String? token;
-      if (decoded.containsKey('token')) token = decoded['token']?.toString();
-      if (token == null && decoded.containsKey('access_token'))
+      if (decoded.containsKey('token')) {
+        token = decoded['token']?.toString();
+      }
+      if (token == null && decoded.containsKey('access_token')) {
         token = decoded['access_token']?.toString();
+      }
       if (token == null &&
           decoded.containsKey('data') &&
           decoded['data'] is Map) {
@@ -919,8 +965,11 @@ class AuthService {
     );
   }
 
-  static Future<dynamic> getMemberMasterList() async {
-    return _post(Uri.parse(_apiUrl('member-api/v1', 'get-membermasterlist')));
+  static Future<dynamic> getMemberMasterList({int startRow = 1}) async {
+    return _post(
+      Uri.parse(_apiUrl('member-api/v1', 'get-membermasterlist')),
+      body: {'startRow': startRow.toString()},
+    );
   }
 
   static Future<dynamic> getMerchantBusinessStaff() async {
@@ -1302,12 +1351,19 @@ class AuthService {
   );
 
   static Future<String?> getNextDueDate({
-    required int familyId,
-    required int incomeId,
+    int? familyId,
+    int? incomeId,
+    String? startDate,
+    int? cycleMonth,
   }) async {
     final response = await _post(
       Uri.parse(_apiUrl('member-api/v1', 'get-next-due-date')),
-      body: buildGetNextDueDateBody(familyId: familyId, incomeId: incomeId),
+      body: buildGetNextDueDateBody(
+        familyId: familyId,
+        incomeId: incomeId,
+        startDate: startDate,
+        cycleMonth: cycleMonth,
+      ),
     );
 
     if (response is Map) {
@@ -1412,9 +1468,10 @@ class AuthService {
   }) async {
     final paid = await getFamilyPaidIncome(familyId: familyId);
     final unpaid = await getFamilyUnpaidIncome(familyId: familyId);
-    final combined = <FamilyTransactionItem>[]
-      ..addAll(FamilyTransactionItem.fromResponse(paid))
-      ..addAll(FamilyTransactionItem.fromResponse(unpaid));
+    final combined = <FamilyTransactionItem>[
+      ...FamilyTransactionItem.fromResponse(paid),
+      ...FamilyTransactionItem.fromResponse(unpaid),
+    ];
 
     if (combined.isNotEmpty) {
       return combined;
@@ -1429,9 +1486,10 @@ class AuthService {
   }) async {
     final paid = await getFamilyPaidExpense(familyId: familyId);
     final unpaid = await getFamilyUnpaidExpense(familyId: familyId);
-    final combined = <FamilyTransactionItem>[]
-      ..addAll(FamilyTransactionItem.fromResponse(paid))
-      ..addAll(FamilyTransactionItem.fromResponse(unpaid));
+    final combined = <FamilyTransactionItem>[
+      ...FamilyTransactionItem.fromResponse(paid),
+      ...FamilyTransactionItem.fromResponse(unpaid),
+    ];
 
     if (combined.isNotEmpty) {
       return combined;
@@ -1446,33 +1504,50 @@ class AuthService {
   }) async {
     final income = await getFamilyUnpaidIncome(familyId: familyId);
     final expense = await getFamilyUnpaidExpense(familyId: familyId);
-    final combined = <FamilyTransactionItem>[]
-      ..addAll(FamilyTransactionItem.fromResponse(income))
-      ..addAll(FamilyTransactionItem.fromResponse(expense));
-
-    return combined;
+    return <FamilyTransactionItem>[
+      ...FamilyTransactionItem.fromResponse(income),
+      ...FamilyTransactionItem.fromResponse(expense),
+    ];
   }
 
   static Future<HomeScreenSummary> getHomeScreenData({
     required int familyId,
   }) async {
-    final response = await _post(
-      Uri.parse(_apiUrl('member-api/v1', 'get-familyhomescreendata')),
-      body: buildHomeScreenDataBody(familyId: familyId),
-    );
-
-    if (response is Map<String, dynamic>) {
-      final data = response['data'];
-      if (data is Map<String, dynamic>) {
-        return HomeScreenSummary.fromJson(data);
-      }
-      if (data is Map) {
-        return HomeScreenSummary.fromJson(Map<String, dynamic>.from(data));
+    dynamic response;
+    try {
+      response = await _post(
+        Uri.parse(_apiUrl('member-api/v1', 'get-familyhomescreendata')),
+        body: buildHomeScreenDataBody(familyId: familyId),
+      );
+    } catch (_) {
+      try {
+        response = await _get(
+          Uri.parse(_apiUrl('member-api/v1', 'get-familyhomescreendata')),
+          queryParameters: {'familyId': familyId.toString()},
+        );
+      } catch (_) {
+        rethrow;
       }
     }
 
     if (response is Map) {
-      return HomeScreenSummary.fromJson(Map<String, dynamic>.from(response));
+      final mapData = Map<String, dynamic>.from(response);
+
+      if (mapData.containsKey('data') && mapData['data'] != null) {
+        final data = mapData['data'];
+        if (data is Map) {
+          return HomeScreenSummary.fromJson(Map<String, dynamic>.from(data));
+        }
+        if (data is List && data.isNotEmpty && data.first is Map) {
+          return HomeScreenSummary.fromJson(Map<String, dynamic>.from(data.first));
+        }
+      }
+
+      if (mapData.containsKey('summary') && mapData['summary'] is Map) {
+        return HomeScreenSummary.fromJson(Map<String, dynamic>.from(mapData['summary']));
+      }
+
+      return HomeScreenSummary.fromJson(mapData);
     }
 
     return HomeScreenSummary(

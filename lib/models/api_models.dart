@@ -4,14 +4,30 @@ class HomeScreenSummary {
     required this.mtdIncome,
     required this.projectedExpenses,
     required this.projectedIncome,
+    this.upcomingIncome = const [],
+    this.upcomingExpense = const [],
+    this.unbilledItems = const [],
+    this.rawJson,
   });
 
   final String mtdExpense;
   final String mtdIncome;
   final String projectedExpenses;
   final String projectedIncome;
+  final List<FamilyTransactionItem> upcomingIncome;
+  final List<FamilyTransactionItem> upcomingExpense;
+  final List<FamilyTransactionItem> unbilledItems;
+  final Map<String, dynamic>? rawJson;
 
   factory HomeScreenSummary.fromJson(Map<String, dynamic> json) {
+    // Helper to merge nested metric objects (summary, totals, metrics, overview) if present
+    final mergedJson = <String, dynamic>{...json};
+    for (final key in ['summary', 'totals', 'metrics', 'overview', 'data']) {
+      if (json[key] is Map) {
+        mergedJson.addAll(Map<String, dynamic>.from(json[key]));
+      }
+    }
+
     String normalize(dynamic value) {
       if (value == null) return '₹0';
       if (value is num) {
@@ -24,39 +40,133 @@ class HomeScreenSummary {
       return '₹${parsed.toStringAsFixed(parsed.truncateToDouble() == parsed ? 0 : 2)}';
     }
 
+    dynamic findValue(List<String> keys) {
+      for (final key in keys) {
+        if (mergedJson.containsKey(key) && mergedJson[key] != null) {
+          return mergedJson[key];
+        }
+      }
+      return null;
+    }
+
+    List<FamilyTransactionItem> parseTransactionList(dynamic value) {
+      if (value == null) return <FamilyTransactionItem>[];
+      if (value is List) {
+        return FamilyTransactionItem.fromResponse({'data': value});
+      }
+      if (value is Map) {
+        return FamilyTransactionItem.fromResponse(Map<String, dynamic>.from(value));
+      }
+      return <FamilyTransactionItem>[];
+    }
+
+    final incomeListRaw = findValue([
+      'upcomingIncome',
+      'upcoming_income',
+      'incomes',
+      'incomeList',
+      'income_list',
+      'fInc_list',
+      'memberIncome',
+      'member_income',
+    ]);
+
+    final expenseListRaw = findValue([
+      'upcomingExpense',
+      'upcoming_expense',
+      'expenses',
+      'expenseList',
+      'expense_list',
+      'fex_list',
+      'memberExpense',
+      'member_expense',
+    ]);
+
+    final unbilledListRaw = findValue([
+      'unbilledItems',
+      'unbilled_items',
+      'unbilled',
+      'unbilledList',
+      'unbilled_list',
+    ]);
+
     return HomeScreenSummary(
+      rawJson: json,
       mtdExpense: normalize(
-        json['mtdExpense'] ??
-            json['mtd_expense'] ??
-            json['expenseMtd'] ??
-            json['expense_mtd'] ??
-            json['monthlyExpense'] ??
-            json['monthly_expense'],
+        findValue([
+          'mtdExpense',
+          'mtd_expense',
+          'expenseMtd',
+          'expense_mtd',
+          'monthlyExpense',
+          'monthly_expense',
+          'MTDExpense',
+          'mtdExpenseAmount',
+          'mtd_expense_amount',
+          'Total_MTD_Expense',
+          'total_mtd_expense',
+          'fex_mtd_amount',
+          'fex_mtd',
+          'mtd_fex_amount',
+          'mtd_fex',
+        ]),
       ),
       mtdIncome: normalize(
-        json['mtdIncome'] ??
-            json['mtd_income'] ??
-            json['incomeMtd'] ??
-            json['income_mtd'] ??
-            json['monthlyIncome'] ??
-            json['monthly_income'],
+        findValue([
+          'mtdIncome',
+          'mtd_income',
+          'incomeMtd',
+          'income_mtd',
+          'monthlyIncome',
+          'monthly_income',
+          'MTDIncome',
+          'mtdIncomeAmount',
+          'mtd_income_amount',
+          'Total_MTD_Income',
+          'total_mtd_income',
+          'fInc_mtd_amount',
+          'finc_mtd',
+          'mtd_finc_amount',
+          'mtd_finc',
+        ]),
       ),
       projectedExpenses: normalize(
-        json['projectedExpenses'] ??
-            json['projected_expenses'] ??
-            json['projExpense'] ??
-            json['proj_expense'] ??
-            json['projectedExpense'] ??
-            json['projected_expense'],
+        findValue([
+          'projectedExpenses',
+          'projected_expenses',
+          'projExpense',
+          'proj_expense',
+          'projectedExpense',
+          'projected_expense',
+          'ProjectedExpense',
+          'projected_expense_amount',
+          'Total_Projected_Expense',
+          'total_projected_expense',
+          'fex_projected_amount',
+          'fex_projected',
+          'proj_fex_amount',
+        ]),
       ),
       projectedIncome: normalize(
-        json['projectedIncome'] ??
-            json['projected_incomes'] ??
-            json['projIncome'] ??
-            json['proj_income'] ??
-            json['projectedIncome'] ??
-            json['projected_income'],
+        findValue([
+          'projectedIncome',
+          'projected_incomes',
+          'projIncome',
+          'proj_income',
+          'projectedIncome',
+          'projected_income',
+          'ProjectedIncome',
+          'projected_income_amount',
+          'Total_Projected_Income',
+          'total_projected_income',
+          'fInc_projected_amount',
+          'finc_projected',
+          'proj_finc_amount',
+        ]),
       ),
+      upcomingIncome: parseTransactionList(incomeListRaw),
+      upcomingExpense: parseTransactionList(expenseListRaw),
+      unbilledItems: parseTransactionList(unbilledListRaw),
     );
   }
 }
