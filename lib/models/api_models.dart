@@ -20,11 +20,27 @@ class HomeScreenSummary {
   final Map<String, dynamic>? rawJson;
 
   factory HomeScreenSummary.fromJson(Map<String, dynamic> json) {
-    // Helper to merge nested metric objects (summary, totals, metrics, overview) if present
+    // Helper to merge nested metric objects (summary, totals, metrics, overview, data, result) if present
     final mergedJson = <String, dynamic>{...json};
-    for (final key in ['summary', 'totals', 'metrics', 'overview', 'data']) {
-      if (json[key] is Map) {
-        mergedJson.addAll(Map<String, dynamic>.from(json[key]));
+
+    void mergeObject(dynamic obj) {
+      if (obj is Map) {
+        mergedJson.addAll(Map<String, dynamic>.from(obj));
+        obj.forEach((k, v) {
+          if (v is Map) {
+            mergedJson.addAll(Map<String, dynamic>.from(v));
+          } else if (v is List && v.isNotEmpty && v.first is Map) {
+            mergedJson.addAll(Map<String, dynamic>.from(v.first));
+          }
+        });
+      } else if (obj is List && obj.isNotEmpty && obj.first is Map) {
+        mergedJson.addAll(Map<String, dynamic>.from(obj.first));
+      }
+    }
+
+    for (final key in ['summary', 'totals', 'metrics', 'overview', 'data', 'result', 'payload']) {
+      if (json.containsKey(key) && json[key] != null) {
+        mergeObject(json[key]);
       }
     }
 
@@ -69,6 +85,12 @@ class HomeScreenSummary {
       'fInc_list',
       'memberIncome',
       'member_income',
+      'unpaidIncome',
+      'unpaid_income',
+      'familyIncome',
+      'family_income',
+      'fInc_data',
+      'fInc',
     ]);
 
     final expenseListRaw = findValue([
@@ -78,8 +100,17 @@ class HomeScreenSummary {
       'expenseList',
       'expense_list',
       'fex_list',
+      'fEx_list',
       'memberExpense',
       'member_expense',
+      'unpaidExpense',
+      'unpaid_expense',
+      'familyExpense',
+      'family_expense',
+      'fex_data',
+      'fEx_data',
+      'fex',
+      'fEx',
     ]);
 
     final unbilledListRaw = findValue([
@@ -88,6 +119,8 @@ class HomeScreenSummary {
       'unbilled',
       'unbilledList',
       'unbilled_list',
+      'unbilled_transactions',
+      'unbilledTransactions',
     ]);
 
     return HomeScreenSummary(
@@ -109,6 +142,12 @@ class HomeScreenSummary {
           'fex_mtd',
           'mtd_fex_amount',
           'mtd_fex',
+          'fEx_mtd_amount',
+          'fEx_mtd',
+          'fex_mtd_amt',
+          'fEx_mtd_amt',
+          'total_fex_mtd',
+          'total_fEx_mtd',
         ]),
       ),
       mtdIncome: normalize(
@@ -128,6 +167,9 @@ class HomeScreenSummary {
           'finc_mtd',
           'mtd_finc_amount',
           'mtd_finc',
+          'fInc_mtd',
+          'fInc_mtd_amt',
+          'total_fInc_mtd',
         ]),
       ),
       projectedExpenses: normalize(
@@ -145,6 +187,10 @@ class HomeScreenSummary {
           'fex_projected_amount',
           'fex_projected',
           'proj_fex_amount',
+          'fEx_projected_amount',
+          'fEx_projected',
+          'fex_proj_amount',
+          'fEx_proj_amount',
         ]),
       ),
       projectedIncome: normalize(
@@ -162,6 +208,8 @@ class HomeScreenSummary {
           'fInc_projected_amount',
           'finc_projected',
           'proj_finc_amount',
+          'fInc_projected',
+          'fInc_proj_amount',
         ]),
       ),
       upcomingIncome: parseTransactionList(incomeListRaw),
