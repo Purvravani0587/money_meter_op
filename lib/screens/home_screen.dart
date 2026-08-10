@@ -87,11 +87,49 @@ class _HomeScreenState extends State<HomeScreen> {
       }
       if (!mounted) return;
 
+      num parseAmount(String str) {
+        final cleaned = str.replaceAll(RegExp(r'[^0-9.-]'), '');
+        return num.tryParse(cleaned) ?? 0;
+      }
+
+      String formatVal(num val) {
+        return '₹${val.toStringAsFixed(val.truncateToDouble() == val ? 0 : 2)}';
+      }
+
+      String mtdExp = summary.mtdExpense;
+      String mtdInc = summary.mtdIncome;
+      String projExp = summary.projectedExpenses;
+      String projInc = summary.projectedIncome;
+
+      if ((mtdInc == '₹0' || mtdInc == '₹0.00') && incomeItems.isNotEmpty) {
+        final sum = incomeItems.fold<num>(
+          0,
+          (prev, item) => prev + parseAmount(item.amount),
+        );
+        if (sum > 0) mtdInc = formatVal(sum);
+      }
+
+      if ((mtdExp == '₹0' || mtdExp == '₹0.00') && expenseItems.isNotEmpty) {
+        final sum = expenseItems.fold<num>(
+          0,
+          (prev, item) => prev + parseAmount(item.amount),
+        );
+        if (sum > 0) mtdExp = formatVal(sum);
+      }
+
+      if (projInc == '₹0' || projInc == '₹0.00') {
+        projInc = mtdInc;
+      }
+
+      if (projExp == '₹0' || projExp == '₹0.00') {
+        projExp = mtdExp;
+      }
+
       setState(() {
-        _mtdExpense = summary.mtdExpense;
-        _mtdIncome = summary.mtdIncome;
-        _projExpenses = summary.projectedExpenses;
-        _projIncome = summary.projectedIncome;
+        _mtdExpense = mtdExp;
+        _mtdIncome = mtdInc;
+        _projExpenses = projExp;
+        _projIncome = projInc;
         _upcomingIncome = incomeItems
             .map((item) => {
                   'name': item.name,

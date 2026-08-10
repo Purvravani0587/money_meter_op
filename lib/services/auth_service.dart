@@ -364,10 +364,12 @@ class AuthService {
   static Map<String, String> buildHomeScreenDataBody({required int familyId}) {
     return {
       'fInc_familyId': familyId.toString(),
+      'finc_familyId': familyId.toString(),
       'fex_familyId': familyId.toString(),
       'fEx_familyId': familyId.toString(),
       'familyId': familyId.toString(),
       'family_id': familyId.toString(),
+      'startRow': '0',
     };
   }
 
@@ -705,6 +707,45 @@ class AuthService {
             data['fullName']?.toString();
       }
       if (name != null && name.isNotEmpty) await saveUserName(name);
+
+      // Extract and save familyId if present in login response
+      int? familyId;
+      dynamic findFamilyId(dynamic obj) {
+        if (obj is! Map) return null;
+        for (final k in [
+          'familyId',
+          'family_id',
+          'fm_id',
+          'fm_iFamilyId',
+          'fu_familyId',
+          'fu_iFamilyId',
+          'fu_fm_id',
+          'fInc_familyId',
+          'fex_familyId',
+          'fEx_familyId',
+          'iFamilyId',
+        ]) {
+          if (obj.containsKey(k) && obj[k] != null) {
+            final parsed = num.tryParse(obj[k].toString());
+            if (parsed != null && parsed > 0) return parsed.toInt();
+          }
+        }
+        return null;
+      }
+
+      familyId = findFamilyId(decoded);
+      if (familyId == null && decoded.containsKey('data')) {
+        familyId = findFamilyId(decoded['data']);
+      }
+      if (familyId == null && decoded.containsKey('user')) {
+        familyId = findFamilyId(decoded['user']);
+      }
+      if (familyId == null && decoded.containsKey('member')) {
+        familyId = findFamilyId(decoded['member']);
+      }
+      if (familyId != null) {
+        await saveFamilyId(familyId);
+      }
 
       // Save the username used to login (assuming it's the mobile number)
       try {
@@ -1514,19 +1555,31 @@ class AuthService {
     required int familyId,
   }) async {
     dynamic response;
+    final body = buildHomeScreenDataBody(familyId: familyId);
+    final httpsUri = Uri.parse(_apiUrl('member-api/v1', 'get-familyhomescreendata'));
+    final httpUri = Uri.parse('http://moneymeter.biz/member-api/v1/get-familyhomescreendata');
+
     try {
-      response = await _post(
-        Uri.parse(_apiUrl('member-api/v1', 'get-familyhomescreendata')),
-        body: buildHomeScreenDataBody(familyId: familyId),
-      );
+      response = await _post(httpsUri, body: body);
     } catch (_) {
       try {
-        response = await _get(
-          Uri.parse(_apiUrl('member-api/v1', 'get-familyhomescreendata')),
-          queryParameters: {'familyId': familyId.toString()},
-        );
+        response = await _post(httpUri, body: body);
       } catch (_) {
-        rethrow;
+        try {
+          response = await _get(
+            httpsUri,
+            queryParameters: {'familyId': familyId.toString(), 'fInc_familyId': familyId.toString()},
+          );
+        } catch (_) {
+          try {
+            response = await _get(
+              httpUri,
+              queryParameters: {'familyId': familyId.toString(), 'fInc_familyId': familyId.toString()},
+            );
+          } catch (_) {
+            rethrow;
+          }
+        }
       }
     }
 
