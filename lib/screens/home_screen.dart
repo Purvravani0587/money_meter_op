@@ -24,6 +24,29 @@ class _HomeScreenState extends State<HomeScreen> {
   String _projExpenses = '₹0';
   String _projIncome = '₹0';
   String _netBalance = '₹0';
+
+  // 7 breakdown options metrics
+  int _unpaidExpCount = 0;
+  String _unpaidExpAmount = '₹0';
+
+  int _pendingIncCount = 0;
+  String _pendingIncAmount = '₹0';
+
+  int _unbilledExpCount = 0;
+  String _unbilledExpAmount = '₹0';
+
+  int _paidExpCount = 0;
+  String _paidExpAmount = '₹0';
+
+  int _receivedIncCount = 0;
+  String _receivedIncAmount = '₹0';
+
+  int _unpaidBillsCount = 0;
+  String _unpaidBillsAmount = '₹0';
+
+  int _paidBillsCount = 0;
+  String _paidBillsAmount = '₹0';
+
   bool _hasLoadedHomeData = false;
   bool _isLoadingHomeData = false;
   bool _isLoadingTransactions = false;
@@ -81,11 +104,40 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       }
 
-      List<FamilyTransactionItem> unbilledItems = summary.unbilledItems;
-      if (unbilledItems.isEmpty) {
-        unbilledItems =
+      List<FamilyTransactionItem> unbilledItemsList = summary.unbilledItems;
+      if (unbilledItemsList.isEmpty) {
+        unbilledItemsList =
             await AuthService.getUnbilledTransactions(familyId: familyId);
       }
+
+      // Fetch unpaid expenses (Un Paid Recurring Expenses)
+      List<FamilyTransactionItem> unpaidExpList = [];
+      try {
+        final res = await AuthService.getFamilyUnpaidExpense(familyId: familyId);
+        unpaidExpList = FamilyTransactionItem.fromResponse(res);
+      } catch (_) {}
+
+      // Fetch pending income (Pending Recurring Income)
+      List<FamilyTransactionItem> pendingIncList = [];
+      try {
+        final res = await AuthService.getFamilyUnpaidIncome(familyId: familyId);
+        pendingIncList = FamilyTransactionItem.fromResponse(res);
+      } catch (_) {}
+
+      // Fetch paid expenses (Cur. Month Paid Recurring Expenses)
+      List<FamilyTransactionItem> paidExpList = [];
+      try {
+        final res = await AuthService.getFamilyPaidExpense(familyId: familyId);
+        paidExpList = FamilyTransactionItem.fromResponse(res);
+      } catch (_) {}
+
+      // Fetch paid / received income (Cur. Month Received Recurring Income)
+      List<FamilyTransactionItem> paidIncList = [];
+      try {
+        final res = await AuthService.getFamilyPaidIncome(familyId: familyId);
+        paidIncList = FamilyTransactionItem.fromResponse(res);
+      } catch (_) {}
+
       if (!mounted) return;
 
       num parseAmount(String str) {
@@ -97,15 +149,50 @@ class _HomeScreenState extends State<HomeScreen> {
         return '₹${val.toStringAsFixed(val.truncateToDouble() == val ? 0 : 2)}';
       }
 
-      num incomeTotalSum = incomeItems.fold<num>(
-        0,
-        (prev, item) => prev + parseAmount(item.amount),
-      );
+      num sumList(List<FamilyTransactionItem> list) =>
+          list.fold<num>(0, (prev, item) => prev + parseAmount(item.amount));
 
-      num expenseTotalSum = expenseItems.fold<num>(
-        0,
-        (prev, item) => prev + parseAmount(item.amount),
-      );
+      num incomeTotalSum = sumList(incomeItems);
+      num expenseTotalSum = sumList(expenseItems);
+
+      num unpaidExpSum = sumList(unpaidExpList);
+      num pendingIncSum = sumList(pendingIncList);
+      num unbilledExpSum = sumList(unbilledItemsList);
+      num paidExpSum = sumList(paidExpList);
+      num paidIncSum = sumList(paidIncList);
+
+      // Bills calculation
+      int unpaidBillsCnt = unpaidExpList.length;
+      num unpaidBillsSum = unpaidExpSum;
+      int paidBillsCnt = paidExpList.length;
+      num paidBillsSum = paidExpSum;
+
+      try {
+        final billsRaw = await AuthService.getMBBillHdrList();
+        if (billsRaw is List && billsRaw.isNotEmpty) {
+          final billItems = FamilyTransactionItem.fromResponse(billsRaw);
+          int uCount = 0;
+          num uSum = 0;
+          int pCount = 0;
+          num pSum = 0;
+          for (final b in billItems) {
+            final amt = parseAmount(b.amount);
+            if (b.status.toLowerCase().contains('paid')) {
+              pCount++;
+              pSum += amt;
+            } else {
+              uCount++;
+              uSum += amt;
+            }
+          }
+          if (uCount > 0 || pCount > 0) {
+            unpaidBillsCnt = uCount;
+            unpaidBillsSum = uSum;
+            paidBillsCnt = pCount;
+            paidBillsSum = pSum;
+          }
+        }
+      } catch (_) {}
 
       String mtdExp = summary.mtdExpense;
       String mtdInc = summary.mtdIncome;
@@ -137,6 +224,28 @@ class _HomeScreenState extends State<HomeScreen> {
         _projExpenses = projExp;
         _projIncome = projInc;
         _netBalance = formatVal(netVal);
+
+        _unpaidExpCount = unpaidExpList.length;
+        _unpaidExpAmount = formatVal(unpaidExpSum);
+
+        _pendingIncCount = pendingIncList.length;
+        _pendingIncAmount = formatVal(pendingIncSum);
+
+        _unbilledExpCount = unbilledItemsList.length;
+        _unbilledExpAmount = formatVal(unbilledExpSum);
+
+        _paidExpCount = paidExpList.length;
+        _paidExpAmount = formatVal(paidExpSum);
+
+        _receivedIncCount = paidIncList.length;
+        _receivedIncAmount = formatVal(paidIncSum);
+
+        _unpaidBillsCount = unpaidBillsCnt;
+        _unpaidBillsAmount = formatVal(unpaidBillsSum);
+
+        _paidBillsCount = paidBillsCnt;
+        _paidBillsAmount = formatVal(paidBillsSum);
+
         _upcomingIncome = incomeItems
             .map((item) => {
                   'name': item.name,
@@ -153,7 +262,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   'status': item.status,
                 })
             .toList();
-        _unbilledItems = unbilledItems
+        _unbilledItems = unbilledItemsList
             .map((item) => {
                   'name': item.name,
                   'amount': item.amount,
@@ -542,6 +651,142 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   const SizedBox(height: 24),
 
+                  // 7 Breakdown Option Cards
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 24.0),
+                    child: Text(
+                      'Detailed Option Summary',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF2D2E4D),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: Column(
+                      children: [
+                        _buildBreakdownOptionCard(
+                          title: 'Un Paid Recurring Expenses',
+                          count: _unpaidExpCount,
+                          amount: _unpaidExpAmount,
+                          icon: Icons.money_off_outlined,
+                          iconBgColor: const Color(0xFFFFEBEE),
+                          iconColor: const Color(0xFFD32F2F),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const RecurringExpensesScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                        _buildBreakdownOptionCard(
+                          title: 'Pending Recurring Income',
+                          count: _pendingIncCount,
+                          amount: _pendingIncAmount,
+                          icon: Icons.hourglass_top_rounded,
+                          iconBgColor: const Color(0xFFE8F5E9),
+                          iconColor: const Color(0xFF388E3C),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const RecurringIncomeScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                        _buildBreakdownOptionCard(
+                          title: 'Un Billed Expenses',
+                          count: _unbilledExpCount,
+                          amount: _unbilledExpAmount,
+                          icon: Icons.receipt_long_outlined,
+                          iconBgColor: const Color(0xFFE3F2FD),
+                          iconColor: const Color(0xFF1976D2),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const UnbilledTransactionsScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                        _buildBreakdownOptionCard(
+                          title: 'Cur. Month Paid Recurring Expenses',
+                          count: _paidExpCount,
+                          amount: _paidExpAmount,
+                          icon: Icons.check_circle_outline,
+                          iconBgColor: const Color(0xFFF3E5F5),
+                          iconColor: const Color(0xFF7B1FA2),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const RecurringExpensesScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                        _buildBreakdownOptionCard(
+                          title: 'Cur. Month Received Recurring Income',
+                          count: _receivedIncCount,
+                          amount: _receivedIncAmount,
+                          icon: Icons.savings_outlined,
+                          iconBgColor: const Color(0xFFE0F2F1),
+                          iconColor: const Color(0xFF00796B),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const MtdIncomeScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                        _buildBreakdownOptionCard(
+                          title: 'Unpaid Bills',
+                          count: _unpaidBillsCount,
+                          amount: _unpaidBillsAmount,
+                          icon: Icons.receipt_outlined,
+                          iconBgColor: const Color(0xFFFFF3E0),
+                          iconColor: const Color(0xFFF57C00),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const UnbilledTransactionsScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                        _buildBreakdownOptionCard(
+                          title: 'Cur. Month Paid Bills',
+                          count: _paidBillsCount,
+                          amount: _paidBillsAmount,
+                          icon: Icons.verified_outlined,
+                          iconBgColor: const Color(0xFFE0F7FA),
+                          iconColor: const Color(0xFF0097A7),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const UnbilledTransactionsScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
                   // Section Header
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -843,6 +1088,88 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ],
               ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBreakdownOptionCard({
+    required String title,
+    required int count,
+    required String amount,
+    required IconData icon,
+    required Color iconBgColor,
+    required Color iconColor,
+    VoidCallback? onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFF2F2F5)),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF2D2E4D).withValues(alpha: 0.03),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: iconBgColor,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: iconColor, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                      color: Color(0xFF2D2E4D),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '$count items',
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: iconBgColor,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                amount,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                  color: iconColor,
+                ),
+              ),
             ),
           ],
         ),
