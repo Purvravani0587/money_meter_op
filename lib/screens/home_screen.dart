@@ -170,258 +170,326 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _isIOS ? const Color(0xFFF2F2F7) : Colors.white,
+      backgroundColor: _isIOS ? const Color(0xFFF2F2F7) : const Color(0xFFFAFAFC),
       body: SafeArea(
         child: ResponsiveCenter(
           maxWidth: 800,
           child: RefreshIndicator(
             onRefresh: () => _loadHomeScreenData(showLoading: false),
-            child: Column(
-              children: [
-                // Header
-                Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 24,
-                        backgroundColor: const Color(0xFFDCD6F7),
-                        child: Text(
-                          _userName.isNotEmpty
-                              ? _userName[0].toUpperCase()
-                              : 'U',
-                          style: TextStyle(
-                            color: Colors.brown.shade700,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 20,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.only(bottom: 32.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 24,
+                          backgroundColor: const Color(0xFFDCD6F7),
+                          child: Text(
+                            _userName.isNotEmpty
+                                ? _userName[0].toUpperCase()
+                                : 'U',
+                            style: TextStyle(
+                              color: Colors.brown.shade700,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 20,
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      'Hello, ${_userName.isNotEmpty ? _userName : 'User'}',
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF2D2E4D),
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      gradient: const LinearGradient(
+                                        colors: [
+                                          Color(0xFFFFD700),
+                                          Color(0xFFFFA500)
+                                        ],
+                                      ),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Text(
+                                      'PREMIUM',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const Text(
+                                'Welcome back 👋',
+                                style:
+                                    TextStyle(color: Colors.grey, fontSize: 14),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Row(
                           children: [
-                            Row(
-                              children: [
-                                Flexible(
-                                  child: Text(
-                                    'Hello, ${_userName.isNotEmpty ? _userName : 'User'}',
-                                    style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF2D2E4D),
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                    maxLines: 1,
+                            IconButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const ApiTestScreen(),
                                   ),
-                                ),
-                                const SizedBox(width: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    gradient: const LinearGradient(
-                                      colors: [
-                                        Color(0xFFFFD700),
-                                        Color(0xFFFFA500)
-                                      ],
-                                    ),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: const Text(
-                                    'PREMIUM',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                                );
+                              },
+                              icon: const Icon(Icons.api_outlined,
+                                  color: Colors.grey),
                             ),
-                            const Text(
-                              'Welcome back 👋',
-                              style:
-                                  TextStyle(color: Colors.grey, fontSize: 14),
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF5F5F5),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Stack(
+                                children: [
+                                  Icon(Icons.notifications_outlined,
+                                      color: Colors.grey),
+                                  Positioned(
+                                    right: 2,
+                                    top: 2,
+                                    child: CircleAvatar(
+                                      radius: 4,
+                                      backgroundColor: Colors.orange,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),
-                      ),
-                      Row(
-                        children: [
-                          IconButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const ApiTestScreen(),
-                                ),
-                              );
-                            },
-                            icon: const Icon(Icons.api_outlined,
-                                color: Colors.grey),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF5F5F5),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Stack(
-                              children: [
-                                Icon(Icons.notifications_outlined,
-                                    color: Colors.grey),
-                                Positioned(
-                                  right: 2,
-                                  top: 2,
-                                  child: CircleAvatar(
-                                    radius: 4,
-                                    backgroundColor: Colors.orange,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-
-                const Center(
-                  child: Text(
-                    'Projected Recurring',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF2D2E4D),
+                      ],
                     ),
-                    textAlign: TextAlign.center,
                   ),
-                ),
-                if (_isLoadingHomeData)
+
+                  // Section Title
                   const Padding(
-                    padding: EdgeInsets.only(top: 8.0),
-                    child: SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                    padding: EdgeInsets.symmetric(horizontal: 24.0),
+                    child: Text(
+                      'Projected Recurring',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF2D2E4D),
+                      ),
                     ),
                   ),
-                const SizedBox(height: 16),
+                  if (_isLoadingHomeData)
+                    const Padding(
+                      padding: EdgeInsets.only(left: 24.0, top: 8.0),
+                      child: SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
+                  const SizedBox(height: 16),
 
-                // Grid Stats
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                  child: GridView.count(
-                    shrinkWrap: true,
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                    childAspectRatio: 1.4,
-                    physics: const NeverScrollableScrollPhysics(),
-                    children: [
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const RecurringExpensesScreen(),
-                            ),
-                          );
-                        },
-                        child: _buildStatCard(
-                          'MTD EXPENSE',
-                          _mtdExpense,
-                          '↓ 4.2% vs last mo.',
-                          Colors.red,
+                  // Grid Stats
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: GridView.count(
+                      shrinkWrap: true,
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 14,
+                      mainAxisSpacing: 14,
+                      childAspectRatio: 1.45,
+                      physics: const NeverScrollableScrollPhysics(),
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const RecurringExpensesScreen(),
+                              ),
+                            );
+                          },
+                          child: _buildStatCard(
+                            title: 'MTD EXPENSE',
+                            value: _mtdExpense,
+                            badge: '↓ 4.2% vs last mo.',
+                            badgeColor: Colors.red,
+                            icon: Icons.trending_down_rounded,
+                            iconBgColor: const Color(0xFFFFEBEE),
+                            iconColor: const Color(0xFFE53935),
+                          ),
                         ),
-                      ),
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const MtdIncomeScreen(),
-                            ),
-                          );
-                        },
-                        child: _buildStatCard(
-                          'MTD INCOME',
-                          _mtdIncome,
-                          '↑ 8.1% vs last mo.',
-                          Colors.green,
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const MtdIncomeScreen(),
+                              ),
+                            );
+                          },
+                          child: _buildStatCard(
+                            title: 'MTD INCOME',
+                            value: _mtdIncome,
+                            badge: '↑ 8.1% vs last mo.',
+                            badgeColor: Colors.green,
+                            icon: Icons.trending_up_rounded,
+                            iconBgColor: const Color(0xFFE8F5E9),
+                            iconColor: const Color(0xFF43A047),
+                          ),
                         ),
-                      ),
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const RecurringExpensesScreen(),
-                            ),
-                          );
-                        },
-                        child: _buildStatCard(
-                          'PROJ. EXPENSES',
-                          _projExpenses,
-                          '',
-                          Colors.transparent,
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const RecurringExpensesScreen(),
+                              ),
+                            );
+                          },
+                          child: _buildStatCard(
+                            title: 'PROJ. EXPENSES',
+                            value: _projExpenses,
+                            badge: '',
+                            badgeColor: Colors.transparent,
+                            icon: Icons.receipt_long_outlined,
+                            iconBgColor: const Color(0xFFFFF3E0),
+                            iconColor: const Color(0xFFFB8C00),
+                          ),
                         ),
-                      ),
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const RecurringIncomeScreen(),
-                            ),
-                          );
-                        },
-                        child: _buildStatCard(
-                          'PROJ. INCOME',
-                          _projIncome,
-                          '',
-                          Colors.transparent,
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const RecurringIncomeScreen(),
+                              ),
+                            );
+                          },
+                          child: _buildStatCard(
+                            title: 'PROJ. INCOME',
+                            value: _projIncome,
+                            badge: '',
+                            badgeColor: Colors.transparent,
+                            icon: Icons.account_balance_wallet_outlined,
+                            iconBgColor: const Color(0xFFE0F7FA),
+                            iconColor: const Color(0xFF00ACC1),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
 
-                const SizedBox(height: 24),
+                  const SizedBox(height: 24),
 
-                // List
-                Expanded(
-                  child: Container(
+                  // Section Header
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Upcoming & Recurring',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF2D2E4D),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEAEFF5),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '${_upcomingExpense.length + _upcomingIncome.length + (_unbilledItems.isNotEmpty ? 1 : 0)} items',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF5C6B73),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Transaction List
+                  Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         if (_isLoadingTransactions)
                           const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 12),
+                            padding: EdgeInsets.symmetric(vertical: 24),
                             child: Center(
-                                child: CircularProgressIndicator(strokeWidth: 2)),
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
                           )
                         else ...[
                           if (_upcomingExpense.isEmpty &&
                               _upcomingIncome.isEmpty &&
                               _unbilledItems.isEmpty)
-                            const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 24),
-                              child: Center(
-                                child: Text(
-                                  'No recurring items found',
-                                  style: TextStyle(
-                                      color: Colors.grey, fontSize: 14),
-                                ),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 32),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                border:
+                                    Border.all(color: const Color(0xFFEEEEEE)),
+                              ),
+                              child: const Column(
+                                children: [
+                                  Icon(Icons.inbox_outlined,
+                                      size: 40, color: Colors.grey),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    'No recurring items found',
+                                    style: TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ..._upcomingExpense.map((item) => _buildListItem(
@@ -430,7 +498,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 item['date'] ?? 'Next 7 days',
                                 item['amount'] ?? '₹0',
                                 0,
-                                Colors.red.shade50,
+                                const Color(0xFFFFEBEE),
                               )),
                           ..._upcomingIncome.map((item) => _buildListItem(
                                 Icons.work_outline,
@@ -438,7 +506,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 item['date'] ?? 'Next 7 days',
                                 item['amount'] ?? '₹0',
                                 0,
-                                Colors.green.shade50,
+                                const Color(0xFFE8F5E9),
                               )),
                           if (_unbilledItems.isNotEmpty)
                             GestureDetector(
@@ -452,22 +520,22 @@ class _HomeScreenState extends State<HomeScreen> {
                                 );
                               },
                               child: _buildListItem(
-                                Icons.receipt_long_outlined,
-                                'Unbilled',
+                                Icons.receipt_outlined,
+                                'Unbilled Items',
                                 'Awaiting invoice',
                                 _unbilledItems
                                     .map((item) => item['amount'] ?? '₹0')
                                     .join(', '),
                                 _unbilledItems.length,
-                                Colors.blue.shade50,
+                                const Color(0xFFE3F2FD),
                               ),
                             ),
                         ],
                       ],
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -475,21 +543,25 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildStatCard(
-    String title,
-    String value,
-    String badge,
-    Color badgeColor,
-  ) {
+  Widget _buildStatCard({
+    required String title,
+    required String value,
+    required String badge,
+    required Color badgeColor,
+    required IconData icon,
+    required Color iconBgColor,
+    required Color iconColor,
+  }) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFF0F0F3)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
+            color: const Color(0xFF2D2E4D).withValues(alpha: 0.04),
+            blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
@@ -501,21 +573,18 @@ class _HomeScreenState extends State<HomeScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Flexible(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey.shade600,
-                  ),
-                  overflow: TextOverflow.ellipsis,
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: iconBgColor,
+                  borderRadius: BorderRadius.circular(12),
                 ),
+                child: Icon(icon, color: iconColor, size: 18),
               ),
               if (badge.isNotEmpty)
                 Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                   decoration: BoxDecoration(
                     color: badgeColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
@@ -524,20 +593,32 @@ class _HomeScreenState extends State<HomeScreen> {
                     badge,
                     style: TextStyle(
                       color: badgeColor,
-                      fontSize: 8,
+                      fontSize: 9,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
             ],
           ),
+          const SizedBox(height: 8),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey.shade600,
+              letterSpacing: 0.4,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 2),
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
             child: Text(
               value,
               style: const TextStyle(
-                fontSize: 20,
+                fontSize: 21,
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF2D2E4D),
               ),
@@ -559,10 +640,11 @@ class _HomeScreenState extends State<HomeScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFF2F2F5)),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.02),
@@ -579,7 +661,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: bgIconColor,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: const Color(0xFF2D2E4D)),
+              child: Icon(icon, color: const Color(0xFF2D2E4D), size: 20),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -594,6 +676,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: Color(0xFF2D2E4D),
                     ),
                   ),
+                  const SizedBox(height: 2),
                   Text(
                     subtitle,
                     style: const TextStyle(color: Colors.grey, fontSize: 12),
@@ -612,23 +695,25 @@ class _HomeScreenState extends State<HomeScreen> {
                     color: Color(0xFF2D2E4D),
                   ),
                 ),
-                if (badgeCount > 0)
+                if (badgeCount > 0) ...[
+                  const SizedBox(height: 4),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 6, vertical: 2),
+                        horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: Colors.blue.shade100,
+                      color: Colors.blue.shade50,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
                       '$badgeCount items',
                       style: TextStyle(
-                        color: Colors.blue.shade800,
+                        color: Colors.blue.shade700,
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
+                ],
               ],
             ),
           ],

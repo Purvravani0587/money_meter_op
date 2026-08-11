@@ -8,7 +8,14 @@ import 'add_recurring_income_screen.dart';
 import 'mtd_income_screen.dart';
 
 class RecurringIncomeScreen extends StatefulWidget {
-  const RecurringIncomeScreen({super.key});
+  final DateTime? initialFromDate;
+  final DateTime? initialToDate;
+
+  const RecurringIncomeScreen({
+    super.key,
+    this.initialFromDate,
+    this.initialToDate,
+  });
 
   @override
   State<RecurringIncomeScreen> createState() => _RecurringIncomeScreenState();
@@ -18,11 +25,90 @@ class _RecurringIncomeScreenState extends State<RecurringIncomeScreen> {
   List<FamilyTransactionItem> _items = [];
   bool _isLoading = false;
   String? _loadError;
+  DateTime? _fromDate;
+  DateTime? _toDate;
 
   @override
   void initState() {
     super.initState();
+    _fromDate = widget.initialFromDate;
+    _toDate = widget.initialToDate;
     _loadData();
+  }
+
+  DateTime? _parseDateString(String text) {
+    if (text.trim().isEmpty) return null;
+    final clean = text.trim();
+    final dt = DateTime.tryParse(clean);
+    if (dt != null) return dt;
+
+    final parts = clean.split(RegExp(r'[/.\-]'));
+    if (parts.length == 3) {
+      if (parts[0].length == 4) {
+        final y = int.tryParse(parts[0]);
+        final m = int.tryParse(parts[1]);
+        final d = int.tryParse(parts[2]);
+        if (y != null && m != null && d != null) return DateTime(y, m, d);
+      } else {
+        final d = int.tryParse(parts[0]);
+        final m = int.tryParse(parts[1]);
+        final y = int.tryParse(parts[2]);
+        if (y != null && m != null && d != null) return DateTime(y, m, d);
+      }
+    }
+    return null;
+  }
+
+  List<FamilyTransactionItem> get _filteredItems {
+    if (_fromDate == null && _toDate == null) return _items;
+
+    return _items.where((item) {
+      final itemDt = _parseDateString(item.date) ??
+          _parseDateString(item.startDate) ??
+          _parseDateString(item.endDate);
+
+      if (itemDt == null) return true;
+
+      if (_fromDate != null) {
+        final start = DateTime(_fromDate!.year, _fromDate!.month, _fromDate!.day);
+        if (itemDt.isBefore(start)) return false;
+      }
+
+      if (_toDate != null) {
+        final end = DateTime(_toDate!.year, _toDate!.month, _toDate!.day, 23, 59, 59);
+        if (itemDt.isAfter(end)) return false;
+      }
+
+      return true;
+    }).toList();
+  }
+
+  Future<void> _selectFromDate(BuildContext context) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _fromDate ?? DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (picked != null) {
+      setState(() {
+        _fromDate = picked;
+      });
+    }
+  }
+
+  Future<void> _selectToDate(BuildContext context) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _toDate ?? DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (picked != null) {
+      setState(() {
+        _toDate = picked;
+      });
+    }
   }
 
   Future<void> _loadData({bool showLoading = true}) async {
@@ -82,6 +168,13 @@ class _RecurringIncomeScreenState extends State<RecurringIncomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final filtered = _filteredItems;
+
+    String formatDate(DateTime? dt) {
+      if (dt == null) return '';
+      return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -103,19 +196,117 @@ class _RecurringIncomeScreenState extends State<RecurringIncomeScreen> {
                           constraints: const BoxConstraints(),
                         ),
                         const SizedBox(height: 20),
-                        const Text(
-                          'Recurring Fix Income',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF2D2E4D),
-                          ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Recurring Fix Income',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF2D2E4D),
+                              ),
+                            ),
+                            Text(
+                              '${filtered.length} of ${_items.length}',
+                              style: const TextStyle(
+                                color: Colors.grey,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
                         ),
-                        Text(
-                          '${_items.length} income sources',
-                          style: const TextStyle(
-                            color: Colors.grey,
-                            fontSize: 16,
+                        const SizedBox(height: 12),
+                        // Date Filter Bar
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8F9FB),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: const Color(0xFFE5E7EB)),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () => _selectFromDate(context),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: _fromDate != null ? const Color(0xFF2D2E4D) : const Color(0xFFD1D5DB),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.calendar_today, size: 14, color: Colors.grey),
+                                        const SizedBox(width: 4),
+                                        Expanded(
+                                          child: Text(
+                                            _fromDate != null ? formatDate(_fromDate) : 'From Date',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: _fromDate != null ? FontWeight.bold : FontWeight.normal,
+                                              color: _fromDate != null ? const Color(0xFF2D2E4D) : Colors.grey,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () => _selectToDate(context),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: _toDate != null ? const Color(0xFF2D2E4D) : const Color(0xFFD1D5DB),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.calendar_today, size: 14, color: Colors.grey),
+                                        const SizedBox(width: 4),
+                                        Expanded(
+                                          child: Text(
+                                            _toDate != null ? formatDate(_toDate) : 'To Date',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: _toDate != null ? FontWeight.bold : FontWeight.normal,
+                                              color: _toDate != null ? const Color(0xFF2D2E4D) : Colors.grey,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              if (_fromDate != null || _toDate != null) ...[
+                                const SizedBox(width: 6),
+                                IconButton(
+                                  icon: const Icon(Icons.close, size: 18, color: Colors.red),
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                  onPressed: () {
+                                    setState(() {
+                                      _fromDate = null;
+                                      _toDate = null;
+                                    });
+                                  },
+                                ),
+                              ],
+                            ],
                           ),
                         ),
                       ],
@@ -220,7 +411,7 @@ class _RecurringIncomeScreenState extends State<RecurringIncomeScreen> {
                                         ),
                                       ],
                                     )
-                                  : _items.isEmpty
+                                  : filtered.isEmpty
                                   ? ListView(
                                       physics:
                                           const AlwaysScrollableScrollPhysics(),
@@ -229,7 +420,7 @@ class _RecurringIncomeScreenState extends State<RecurringIncomeScreen> {
                                           padding: EdgeInsets.all(32),
                                           child: Center(
                                             child: Text(
-                                              'No recurring income sources found',
+                                              'No recurring income sources found for selected dates',
                                               style: TextStyle(color: Colors.grey),
                                             ),
                                           ),
@@ -239,12 +430,12 @@ class _RecurringIncomeScreenState extends State<RecurringIncomeScreen> {
                                   : ListView.separated(
                                       physics:
                                           const AlwaysScrollableScrollPhysics(),
-                                      itemCount: _items.length,
+                                      itemCount: filtered.length,
                                       separatorBuilder:
                                           (context, index) =>
                                               const Divider(height: 1),
                                       itemBuilder: (context, index) {
-                                        final item = _items[index];
+                                        final item = filtered[index];
                                         return _build3ColumnRow(item);
                                       },
                                     ),
@@ -254,7 +445,7 @@ class _RecurringIncomeScreenState extends State<RecurringIncomeScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 100),
+                  const SizedBox(height: 100), // Space for FAB
                 ],
               ),
 

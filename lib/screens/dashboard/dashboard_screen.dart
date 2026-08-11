@@ -23,6 +23,52 @@ class _DashboardScreenState extends State<DashboardScreen>
   late TabController _invoiceTabController;
   String _userName = '';
   String _userMobile = '';
+  DateTime? _masterFromDate;
+  DateTime? _masterToDate;
+
+  Future<void> _selectMasterFromDate(BuildContext context) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _masterFromDate ?? DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (picked != null) {
+      setState(() {
+        _masterFromDate = picked;
+      });
+    }
+  }
+
+  Future<void> _selectMasterToDate(BuildContext context) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _masterToDate ?? DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (picked != null) {
+      setState(() {
+        _masterToDate = picked;
+      });
+    }
+  }
+
+  Widget _buildPresetChip(String label, VoidCallback onTap) {
+    return ActionChip(
+      label: Text(
+        label,
+        style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF2D2E4D)),
+      ),
+      backgroundColor: const Color(0xFFEAEFF5),
+      padding: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      onPressed: onTap,
+    );
+  }
 
   final List<Map<String, dynamic>> _allInvoices = [
     {
@@ -204,6 +250,11 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   Widget _buildMastersContent() {
+    String formatDate(DateTime? dt) {
+      if (dt == null) return '';
+      return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -236,6 +287,187 @@ class _DashboardScreenState extends State<DashboardScreen>
           ),
         ),
 
+        // Date Filter Box
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8F9FB),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE5E7EB)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.filter_alt_outlined,
+                            size: 18, color: Color(0xFF2D2E4D)),
+                        SizedBox(width: 6),
+                        Text(
+                          'Master Date Filter',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF2D2E4D),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (_masterFromDate != null || _masterToDate != null)
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _masterFromDate = null;
+                            _masterToDate = null;
+                          });
+                        },
+                        child: const Text(
+                          'Clear Filter',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.red,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => _selectMasterFromDate(context),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: _masterFromDate != null
+                                  ? const Color(0xFF2D2E4D)
+                                  : const Color(0xFFD1D5DB),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.calendar_month,
+                                  size: 16, color: Colors.grey),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  _masterFromDate != null
+                                      ? formatDate(_masterFromDate)
+                                      : 'From Date',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: _masterFromDate != null
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                    color: _masterFromDate != null
+                                        ? const Color(0xFF2D2E4D)
+                                        : Colors.grey,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => _selectMasterToDate(context),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: _masterToDate != null
+                                  ? const Color(0xFF2D2E4D)
+                                  : const Color(0xFFD1D5DB),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.calendar_month,
+                                  size: 16, color: Colors.grey),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  _masterToDate != null
+                                      ? formatDate(_masterToDate)
+                                      : 'To Date',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: _masterToDate != null
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                    color: _masterToDate != null
+                                        ? const Color(0xFF2D2E4D)
+                                        : Colors.grey,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                // Quick preset chips
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _buildPresetChip('This Month', () {
+                        final now = DateTime.now();
+                        setState(() {
+                          _masterFromDate = DateTime(now.year, now.month, 1);
+                          _masterToDate =
+                              DateTime(now.year, now.month + 1, 0);
+                        });
+                      }),
+                      const SizedBox(width: 6),
+                      _buildPresetChip('Last 30 Days', () {
+                        final now = DateTime.now();
+                        setState(() {
+                          _masterFromDate =
+                              now.subtract(const Duration(days: 30));
+                          _masterToDate = now;
+                        });
+                      }),
+                      const SizedBox(width: 6),
+                      _buildPresetChip('This Year', () {
+                        final now = DateTime.now();
+                        setState(() {
+                          _masterFromDate = DateTime(now.year, 1, 1);
+                          _masterToDate = DateTime(now.year, 12, 31);
+                        });
+                      }),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
         Expanded(
           child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -247,7 +479,10 @@ class _DashboardScreenState extends State<DashboardScreen>
                   await Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const RecurringExpensesScreen(),
+                      builder: (context) => RecurringExpensesScreen(
+                        initialFromDate: _masterFromDate,
+                        initialToDate: _masterToDate,
+                      ),
                     ),
                   );
                 },
@@ -259,7 +494,10 @@ class _DashboardScreenState extends State<DashboardScreen>
                   await Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const RecurringIncomeScreen(),
+                      builder: (context) => RecurringIncomeScreen(
+                        initialFromDate: _masterFromDate,
+                        initialToDate: _masterToDate,
+                      ),
                     ),
                   );
                 },
