@@ -119,7 +119,8 @@ class _RecurringIncomeScreenState extends State<RecurringIncomeScreen> {
       });
     }
     try {
-      final items = await AuthService.getAllIncome(familyId: 1);
+      final familyId = await AuthService.getFamilyId();
+      final items = await AuthService.getAllIncome(familyId: familyId);
       if (mounted) {
         setState(() {
           _items = items;

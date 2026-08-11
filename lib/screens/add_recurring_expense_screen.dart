@@ -220,6 +220,7 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
     setState(() => _isLoading = true);
 
     try {
+      final familyId = await AuthService.getFamilyId();
       final formattedStartDate = _formatDateForApi(_startDateController.text.trim());
       final formattedExpiryDate = _formatDateForApi(_expiryDateController.text.trim());
       final statusCode = _status == 'Active' ? 'A' : 'D';
@@ -228,7 +229,7 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
 
       if (targetExpenseId != null) {
         await AuthService.editExpenseMaster(
-          familyId: 1,
+          familyId: familyId,
           expenseId: targetExpenseId,
           expenseName: _acNameController.text.trim(),
           expenseType: _type != '-- SELECT --' ? _type : 'E',
@@ -244,7 +245,7 @@ class _AddRecurringExpenseScreenState extends State<AddRecurringExpenseScreen> {
         }
       } else {
         await AuthService.addExpense(
-          familyId: 1,
+          familyId: familyId,
           expenseName: _acNameController.text.trim(),
           expenseType: _type != '-- SELECT --' ? _type : 'E',
           cycleMonths: 1,

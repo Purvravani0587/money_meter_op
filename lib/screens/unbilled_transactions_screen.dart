@@ -24,7 +24,8 @@ class _UnbilledTransactionsScreenState extends State<UnbilledTransactionsScreen>
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     try {
-      final items = await AuthService.getUnbilledTransactions(familyId: 1);
+      final familyId = await AuthService.getFamilyId();
+      final items = await AuthService.getUnbilledTransactions(familyId: familyId);
       if (mounted) {
         setState(() => _items = items);
       }

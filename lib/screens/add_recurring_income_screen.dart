@@ -232,6 +232,7 @@ class _AddRecurringIncomeScreenState extends State<AddRecurringIncomeScreen> {
     setState(() => _isLoading = true);
 
     try {
+      final familyId = await AuthService.getFamilyId();
       final formattedStartDate = _formatDateForApi(_startDateController.text.trim());
       final formattedEndDate = _formatDateForApi(_endDateController.text.trim());
       final statusCode = _status == 'Active' ? 'A' : 'D';
@@ -239,7 +240,7 @@ class _AddRecurringIncomeScreenState extends State<AddRecurringIncomeScreen> {
       if (widget.item != null) {
         final incomeId = int.tryParse(widget.item!.id) ?? 0;
         await AuthService.updateIncomeMaster(
-          familyId: 1,
+          familyId: familyId,
           incomeId: incomeId,
           incomeName: _sourceNameController.text.trim(),
           incomeType: _incomeType != '-- SELECT --' ? _incomeType : 'I',
@@ -255,7 +256,7 @@ class _AddRecurringIncomeScreenState extends State<AddRecurringIncomeScreen> {
         }
       } else {
         await AuthService.createIncomeMaster(
-          familyId: 1,
+          familyId: familyId,
           incomeName: _sourceNameController.text.trim(),
           incomeType: _incomeType != '-- SELECT --' ? _incomeType : 'I',
           cycleMonths: 1,

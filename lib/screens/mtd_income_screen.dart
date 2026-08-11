@@ -24,7 +24,8 @@ class _MtdIncomeScreenState extends State<MtdIncomeScreen> {
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     try {
-      final items = await AuthService.getIncomeTransactions(familyId: 1);
+      final familyId = await AuthService.getFamilyId();
+      final items = await AuthService.getIncomeTransactions(familyId: familyId);
       if (mounted) {
         setState(() => _items = items);
       }

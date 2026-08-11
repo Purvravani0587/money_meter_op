@@ -509,14 +509,26 @@ class AuthService {
     required int familyId,
     int startRow = 0,
   }) {
-    return {'familyId': familyId.toString(), 'startRow': startRow.toString()};
+    return {
+      'familyId': familyId.toString(),
+      'family_id': familyId.toString(),
+      'fInc_familyId': familyId.toString(),
+      'finc_familyId': familyId.toString(),
+      'startRow': startRow.toString(),
+    };
   }
 
   static Map<String, String> buildGetExpenseListQueryParameters({
     required int familyId,
     int startRow = 0,
   }) {
-    return {'familyId': familyId.toString(), 'startRow': startRow.toString()};
+    return {
+      'familyId': familyId.toString(),
+      'family_id': familyId.toString(),
+      'fex_familyId': familyId.toString(),
+      'fEx_familyId': familyId.toString(),
+      'startRow': startRow.toString(),
+    };
   }
 
   static Map<String, String> buildFamilyIncomeListBody({

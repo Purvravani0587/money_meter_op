@@ -8,6 +8,8 @@ import '../auth/login_screen.dart';
 import '../home_screen.dart';
 import '../recurring_expenses_screen.dart';
 import '../recurring_income_screen.dart';
+import '../add_recurring_expense_screen.dart';
+import '../add_recurring_income_screen.dart';
 import 'edit_profile_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -941,6 +943,140 @@ class _DashboardScreenState extends State<DashboardScreen>
 
 
 
+  void _showQuickActionsBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(28),
+              topRight: Radius.circular(28),
+            ),
+          ),
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Quick Actions & Options',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2D2E4D),
+                ),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFEBEE),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.add_card, color: Color(0xFFE53935)),
+                ),
+                title: const Text('Add Recurring Fix Expense', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                subtitle: const Text('Create a new recurring expense record', style: TextStyle(fontSize: 12)),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const AddRecurringExpenseScreen()),
+                  );
+                },
+              ),
+              const Divider(height: 1),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE8F5E9),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.account_balance_wallet_outlined, color: Color(0xFF43A047)),
+                ),
+                title: const Text('Add Recurring Fix Income', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                subtitle: const Text('Create a new recurring income record', style: TextStyle(fontSize: 12)),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const AddRecurringIncomeScreen()),
+                  );
+                },
+              ),
+              const Divider(height: 1),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF3E0),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.repeat, color: Color(0xFFFB8C00)),
+                ),
+                title: const Text('Recurring Expenses Master', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                subtitle: const Text('View and manage expense master records', style: TextStyle(fontSize: 12)),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const RecurringExpensesScreen()),
+                  );
+                },
+              ),
+              const Divider(height: 1),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE0F7FA),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.apartment, color: Color(0xFF00ACC1)),
+                ),
+                title: const Text('Recurring Income Master', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                subtitle: const Text('View and manage income master records', style: TextStyle(fontSize: 12)),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const RecurringIncomeScreen()),
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildBottomNav() {
     return Container(
       height: 80,
@@ -953,22 +1089,25 @@ class _DashboardScreenState extends State<DashboardScreen>
         children: [
           _buildNavItem(Icons.home_outlined, 'Home', 0),
           _buildNavItem(Icons.description_outlined, 'Invoices', 1),
-          Transform.translate(
-            offset: const Offset(0, -10),
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: const BoxDecoration(
-                color: Color(0xFF2D2E4D),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 10,
-                    spreadRadius: 2,
-                  ),
-                ],
+          GestureDetector(
+            onTap: _showQuickActionsBottomSheet,
+            child: Transform.translate(
+              offset: const Offset(0, -10),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF2D2E4D),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 10,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+                child: const Icon(Icons.swap_vert, color: Colors.white),
               ),
-              child: const Icon(Icons.swap_vert, color: Colors.white),
             ),
           ),
           _buildNavItem(Icons.grid_view, 'Masters', 2),
