@@ -23,6 +23,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String _mtdIncome = '₹0';
   String _projExpenses = '₹0';
   String _projIncome = '₹0';
+  String _netBalance = '₹0';
   bool _hasLoadedHomeData = false;
   bool _isLoadingHomeData = false;
   bool _isLoadingTransactions = false;
@@ -62,21 +63,21 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final familyId = await AuthService.getFamilyId();
       final summary = await AuthService.getHomeScreenData(familyId: familyId);
-      List<FamilyTransactionItem> incomeItems = summary.upcomingIncome;
+      
+      // Fetch full list of income and expense items to calculate true total sum
+      List<FamilyTransactionItem> incomeItems = await AuthService.getAllIncome(familyId: familyId);
       if (incomeItems.isEmpty) {
-        incomeItems =
-            await AuthService.getIncomeTransactions(familyId: familyId);
+        incomeItems = summary.upcomingIncome;
         if (incomeItems.isEmpty) {
-          incomeItems = await AuthService.getAllIncome(familyId: familyId);
+          incomeItems = await AuthService.getIncomeTransactions(familyId: familyId);
         }
       }
 
-      List<FamilyTransactionItem> expenseItems = summary.upcomingExpense;
+      List<FamilyTransactionItem> expenseItems = await AuthService.getExpenseMasterGrid(familyId: familyId, startRow: 0);
       if (expenseItems.isEmpty) {
-        expenseItems =
-            await AuthService.getExpenseTransactions(familyId: familyId);
+        expenseItems = summary.upcomingExpense;
         if (expenseItems.isEmpty) {
-          expenseItems = await AuthService.getAllExpense(familyId: familyId);
+          expenseItems = await AuthService.getExpenseTransactions(familyId: familyId);
         }
       }
 
@@ -96,40 +97,46 @@ class _HomeScreenState extends State<HomeScreen> {
         return '₹${val.toStringAsFixed(val.truncateToDouble() == val ? 0 : 2)}';
       }
 
+      num incomeTotalSum = incomeItems.fold<num>(
+        0,
+        (prev, item) => prev + parseAmount(item.amount),
+      );
+
+      num expenseTotalSum = expenseItems.fold<num>(
+        0,
+        (prev, item) => prev + parseAmount(item.amount),
+      );
+
       String mtdExp = summary.mtdExpense;
       String mtdInc = summary.mtdIncome;
       String projExp = summary.projectedExpenses;
       String projInc = summary.projectedIncome;
 
-      if ((mtdInc == '₹0' || mtdInc == '₹0.00') && incomeItems.isNotEmpty) {
-        final sum = incomeItems.fold<num>(
-          0,
-          (prev, item) => prev + parseAmount(item.amount),
-        );
-        if (sum > 0) mtdInc = formatVal(sum);
+      if (incomeTotalSum > 0 || mtdInc == '₹0' || mtdInc == '₹0.00') {
+        mtdInc = formatVal(incomeTotalSum > 0 ? incomeTotalSum : parseAmount(mtdInc));
       }
 
-      if ((mtdExp == '₹0' || mtdExp == '₹0.00') && expenseItems.isNotEmpty) {
-        final sum = expenseItems.fold<num>(
-          0,
-          (prev, item) => prev + parseAmount(item.amount),
-        );
-        if (sum > 0) mtdExp = formatVal(sum);
+      if (expenseTotalSum > 0 || mtdExp == '₹0' || mtdExp == '₹0.00') {
+        mtdExp = formatVal(expenseTotalSum > 0 ? expenseTotalSum : parseAmount(mtdExp));
       }
 
-      if (projInc == '₹0' || projInc == '₹0.00') {
-        projInc = mtdInc;
+      if (incomeTotalSum > 0 || projInc == '₹0' || projInc == '₹0.00') {
+        projInc = formatVal(incomeTotalSum > 0 ? incomeTotalSum : parseAmount(projInc));
       }
 
-      if (projExp == '₹0' || projExp == '₹0.00') {
-        projExp = mtdExp;
+      if (expenseTotalSum > 0 || projExp == '₹0' || projExp == '₹0.00') {
+        projExp = formatVal(expenseTotalSum > 0 ? expenseTotalSum : parseAmount(projExp));
       }
+
+      final netVal = (incomeTotalSum > 0 ? incomeTotalSum : parseAmount(mtdInc)) -
+          (expenseTotalSum > 0 ? expenseTotalSum : parseAmount(mtdExp));
 
       setState(() {
         _mtdExpense = mtdExp;
         _mtdIncome = mtdInc;
         _projExpenses = projExp;
         _projIncome = projInc;
+        _netBalance = formatVal(netVal);
         _upcomingIncome = incomeItems
             .map((item) => {
                   'name': item.name,
@@ -294,6 +301,127 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ),
                   ),
+
+                  // Total Net Summary Banner
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF2D2E4D), Color(0xFF1E1F38)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF2D2E4D).withValues(alpha: 0.25),
+                            blurRadius: 14,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Total Net Balance',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Row(
+                                  children: [
+                                    Icon(Icons.account_balance_wallet,
+                                        size: 14, color: Colors.amber),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      'TOTAL',
+                                      style: TextStyle(
+                                        color: Colors.amber,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            _netBalance,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 26,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.arrow_upward,
+                                        size: 14, color: Colors.greenAccent),
+                                    const SizedBox(width: 4),
+                                    Flexible(
+                                      child: Text(
+                                        'Inc: $_projIncome',
+                                        style: const TextStyle(
+                                            color: Colors.white70,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                  width: 1, height: 16, color: Colors.white24),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.arrow_downward,
+                                        size: 14, color: Colors.redAccent),
+                                    const SizedBox(width: 4),
+                                    Flexible(
+                                      child: Text(
+                                        'Exp: $_projExpenses',
+                                        style: const TextStyle(
+                                            color: Colors.white70,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
 
                   // Section Title
                   const Padding(
