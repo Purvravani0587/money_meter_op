@@ -49,10 +49,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   bool _hasLoadedHomeData = false;
   bool _isLoadingHomeData = false;
-  bool _isLoadingTransactions = false;
-  List<Map<String, dynamic>> _upcomingIncome = [];
-  List<Map<String, dynamic>> _upcomingExpense = [];
-  List<Map<String, dynamic>> _unbilledItems = [];
 
   bool get _isIOS => !kIsWeb && Platform.isIOS;
 
@@ -79,7 +75,6 @@ class _HomeScreenState extends State<HomeScreen> {
     if (showLoading && !_hasLoadedHomeData) {
       setState(() {
         _isLoadingHomeData = true;
-        _isLoadingTransactions = true;
       });
     }
 
@@ -246,38 +241,14 @@ class _HomeScreenState extends State<HomeScreen> {
         _paidBillsCount = paidBillsCnt;
         _paidBillsAmount = formatVal(paidBillsSum);
 
-        _upcomingIncome = incomeItems
-            .map((item) => {
-                  'name': item.name,
-                  'amount': item.amount,
-                  'date': item.date,
-                  'status': item.status,
-                })
-            .toList();
-        _upcomingExpense = expenseItems
-            .map((item) => {
-                  'name': item.name,
-                  'amount': item.amount,
-                  'date': item.date,
-                  'status': item.status,
-                })
-            .toList();
-        _unbilledItems = unbilledItemsList
-            .map((item) => {
-                  'name': item.name,
-                  'amount': item.amount,
-                })
-            .toList();
         _hasLoadedHomeData = true;
         _isLoadingHomeData = false;
-        _isLoadingTransactions = false;
       });
     } catch (_) {
       if (mounted) {
         setState(() {
           _hasLoadedHomeData = true;
           _isLoadingHomeData = false;
-          _isLoadingTransactions = false;
         });
       }
     }
@@ -785,128 +756,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 24),
 
-                  // Section Header
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Upcoming & Recurring',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF2D2E4D),
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFEAEFF5),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            '${_upcomingExpense.length + _upcomingIncome.length + (_unbilledItems.isNotEmpty ? 1 : 0)} items',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF5C6B73),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  // Transaction List
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (_isLoadingTransactions)
-                          const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 24),
-                            child: Center(
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            ),
-                          )
-                        else ...[
-                          if (_upcomingExpense.isEmpty &&
-                              _upcomingIncome.isEmpty &&
-                              _unbilledItems.isEmpty)
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.symmetric(vertical: 32),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(16),
-                                border:
-                                    Border.all(color: const Color(0xFFEEEEEE)),
-                              ),
-                              child: const Column(
-                                children: [
-                                  Icon(Icons.inbox_outlined,
-                                      size: 40, color: Colors.grey),
-                                  SizedBox(height: 8),
-                                  Text(
-                                    'No recurring items found',
-                                    style: TextStyle(
-                                      color: Colors.grey,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ..._upcomingExpense.map((item) => _buildListItem(
-                                Icons.receipt_long_outlined,
-                                item['name'] ?? 'Expense',
-                                item['date'] ?? 'Next 7 days',
-                                item['amount'] ?? '₹0',
-                                0,
-                                const Color(0xFFFFEBEE),
-                              )),
-                          ..._upcomingIncome.map((item) => _buildListItem(
-                                Icons.work_outline,
-                                item['name'] ?? 'Income',
-                                item['date'] ?? 'Next 7 days',
-                                item['amount'] ?? '₹0',
-                                0,
-                                const Color(0xFFE8F5E9),
-                              )),
-                          if (_unbilledItems.isNotEmpty)
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        const UnbilledTransactionsScreen(),
-                                  ),
-                                );
-                              },
-                              child: _buildListItem(
-                                Icons.receipt_outlined,
-                                'Unbilled Items',
-                                'Awaiting invoice',
-                                _unbilledItems
-                                    .map((item) => item['amount'] ?? '₹0')
-                                    .join(', '),
-                                _unbilledItems.length,
-                                const Color(0xFFE3F2FD),
-                              ),
-                            ),
-                        ],
-                      ],
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -1002,98 +852,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildListItem(
-    IconData icon,
-    String title,
-    String subtitle,
-    String amount,
-    int badgeCount,
-    Color bgIconColor,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFF2F2F5)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.02),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: bgIconColor,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: const Color(0xFF2D2E4D), size: 20),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                      color: Color(0xFF2D2E4D),
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(color: Colors.grey, fontSize: 12),
-                  ),
-                ],
-              ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  amount,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                    color: Color(0xFF2D2E4D),
-                  ),
-                ),
-                if (badgeCount > 0) ...[
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      '$badgeCount items',
-                      style: TextStyle(
-                        color: Colors.blue.shade700,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+
 
   Widget _buildBreakdownOptionCard({
     required String title,
