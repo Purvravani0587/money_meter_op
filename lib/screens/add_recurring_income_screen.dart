@@ -598,7 +598,8 @@ class _AddRecurringIncomeScreenState extends State<AddRecurringIncomeScreen> {
   }) {
     final validValue = items.contains(value) ? value : items.first;
     return DropdownButtonFormField<String>(
-      initialValue: validValue,
+      // ignore: deprecated_member_use
+      value: validValue,
       onChanged: onChanged,
       style: const TextStyle(fontSize: 14, color: Color(0xFF2D3436)),
       icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF666666)),

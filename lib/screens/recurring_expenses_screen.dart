@@ -633,7 +633,7 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
           borderRadius: BorderRadius.circular(10),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF7C5CFC).withValues(alpha: 0.3),
+              color: const Color(0xFF7C5CFC).withAlpha((0.3 * 255).round()),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),

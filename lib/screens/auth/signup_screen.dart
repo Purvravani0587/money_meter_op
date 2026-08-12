@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:get/get.dart';
 import '../../controllers/auth/signup_controller.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/responsive_center.dart';
+import 'otp_screen.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -18,7 +18,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   void initState() {
     super.initState();
-    controller = Get.put(SignUpController());
+    controller = SignUpController();
+    controller.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
   }
 
   @override
@@ -28,232 +35,267 @@ class _SignUpScreenState extends State<SignUpScreen> {
       body: SafeArea(
         child: ResponsiveCenter(
           child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 20),
-                IconButton(
-                  onPressed: () => Get.back(),
-                  icon: const Icon(Icons.arrow_back),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-                const SizedBox(height: 30),
-                Center(
-                  child: Column(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 20),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.arrow_back),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                  const SizedBox(height: 30),
+                  Center(
+                    child: Column(
+                      children: [
+                        Image.asset(
+                          'assets/images/logo.png',
+                          width: 100,
+                          height: 100,
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Money Meter',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF2D2E4D),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+                  const Text(
+                    'Create account',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF2D3436),
+                    ),
+                  ),
+                  const Text(
+                    'Takes less than a minute',
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 40),
+
+                  _buildLabel('FULL NAME', Icons.person_outline),
+                  _buildTextField('Enter Full Name',
+                      controller: controller.fullNameController),
+
+                  const SizedBox(height: 24),
+                  _buildLabel('MOBILE NO.', Icons.phone_android_outlined),
+                  Row(
                     children: [
-                      Image.asset(
-                        'assets/images/logo.png',
-                        width: 100,
-                        height: 100,
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Money Meter',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF2D2E4D),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 30),
-                const Text(
-                  'Create account',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF2D3436),
-                  ),
-                ),
-                const Text(
-                  'Takes less than a minute',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey,
-                  ),
-                ),
-                const SizedBox(height: 40),
-                
-                _buildLabel('FULL NAME', Icons.person_outline),
-                _buildTextField('Enter Full Name', controller: controller.fullNameController),
-                
-                const SizedBox(height: 24),
-                _buildLabel('MOBILE NO.', Icons.phone_android_outlined),
-                Row(
-                  children: [
-                    GestureDetector(
-                      onTap: () => controller.selectCountryCode(context),
-                      child: Container(
-                        height: 56,
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF0F0F0),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        alignment: Alignment.center,
-                        child: Obx(() => Row(
-                          children: [
-                            Text(controller.countryFlag.value, style: const TextStyle(fontSize: 18)),
-                            const SizedBox(width: 4),
-                            Text(
-                              controller.countryCode.value,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                            ),
-                            const Icon(Icons.arrow_drop_down, size: 20),
-                          ],
-                        )),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: _buildTextField(
-                        'Mobile No.',
-                        controller: controller.mobileController,
-                        keyboardType: TextInputType.phone,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                          LengthLimitingTextInputFormatter(10),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                _buildLabel('DATE OF BIRTH', Icons.calendar_today_outlined),
-                _buildTextField(
-                  'DD/MM/YYYY',
-                  controller: controller.dobController,
-                  readOnly: true,
-                  onTap: () => controller.selectDate(context),
-                ),
-                const SizedBox(height: 24),
-                _buildLabel('GENDER', Icons.wc_outlined),
-                Row(
-                  children: [
-                    Obx(() => _buildRadio('Male', 'M', controller.gender.value, (v) => controller.setGender(v))),
-                    const SizedBox(width: 20),
-                    Obx(() => _buildRadio('Female', 'F', controller.gender.value, (v) => controller.setGender(v))),
-                  ],
-                ),
-
-                const SizedBox(height: 24),
-                _buildLabel('PASSWORD', Icons.lock_outline),
-                Obx(() => _buildTextField(
-                  'Enter Password',
-                  controller: controller.passwordController,
-                  obscureText: controller.obscurePassword.value,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      controller.obscurePassword.value ? Icons.visibility_off : Icons.visibility,
-                      color: Colors.grey,
-                    ),
-                    onPressed: controller.toggleObscurePassword,
-                  ),
-                )),
-                const SizedBox(height: 24),
-                _buildLabel('CONFIRM PASSWORD', Icons.lock_outline),
-                Obx(() => _buildTextField(
-                  'Confirm Password',
-                  controller: controller.confirmPasswordController,
-                  obscureText: controller.obscureConfirmPassword.value,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      controller.obscureConfirmPassword.value ? Icons.visibility_off : Icons.visibility,
-                      color: Colors.grey,
-                    ),
-                    onPressed: controller.toggleObscureConfirmPassword,
-                  ),
-                )),
-
-                const SizedBox(height: 24),
-                _buildLabel('EMAIL (OPTIONAL)', Icons.email_outlined),
-                _buildTextField('Enter Your Email', controller: controller.emailController, keyboardType: TextInputType.emailAddress),
-                const SizedBox(height: 24),
-                _buildLabel('ADDRESS', Icons.location_on_outlined),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildTextField(
-                        'Enter your full address',
-                        controller: controller.addressController,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    SizedBox(
-                      height: 52,
-                      child: Obx(() => ElevatedButton.icon(
-                        onPressed: controller.isGettingLocation.value ? null : controller.getCurrentLocation,
-                        icon: controller.isGettingLocation.value
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Icon(Icons.my_location, size: 18),
-                        label: const Text('Use current', style: TextStyle(fontSize: 12)),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF2D2E4D),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
+                      GestureDetector(
+                        onTap: () => controller.selectCountryCode(context),
+                        child: Container(
+                          height: 56,
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF0F0F0),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          alignment: Alignment.center,
+                          child: Row(
+                            children: [
+                              Text(controller.countryFlag,
+                                  style: const TextStyle(fontSize: 18)),
+                              const SizedBox(width: 4),
+                              Text(
+                                controller.countryCode,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold, fontSize: 14),
+                              ),
+                              const Icon(Icons.arrow_drop_down, size: 20),
+                            ],
+                          ),
                         ),
-                      )),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                _buildLabel('LANDMARK (OPTIONAL)', Icons.flag_outlined),
-                _buildTextField('Enter landmark (e.g. Near City Park)', controller: controller.landmarkController),
-                
-                const SizedBox(height: 40),
-                Obx(() => CustomButton(
-                  text: 'Create Account',
-                  isLoading: controller.isLoading.value,
-                  onPressed: controller.register,
-                )),
-                const SizedBox(height: 24),
-                Center(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: _buildTextField(
+                          'Mobile No.',
+                          controller: controller.mobileController,
+                          keyboardType: TextInputType.phone,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(10),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 24),
+                  _buildLabel('DATE OF BIRTH', Icons.calendar_today_outlined),
+                  _buildTextField(
+                    'DD/MM/YYYY',
+                    controller: controller.dobController,
+                    readOnly: true,
+                    onTap: () => controller.selectDate(context),
+                  ),
+
+                  const SizedBox(height: 24),
+                  _buildLabel('GENDER', Icons.wc_outlined),
+                  Row(
                     children: [
-                      const Text("Already registered? "),
-                      GestureDetector(
-                        onTap: () => Get.back(),
-                        child: const Text(
-                          'Sign in',
-                          style: TextStyle(
-                            color: Color(0xFF2D2E4D),
-                            fontWeight: FontWeight.bold,
-                            decoration: TextDecoration.underline,
+                      _buildRadio('Male', 'M', controller.gender,
+                          (v) => controller.setGender(v)),
+                      const SizedBox(width: 20),
+                      _buildRadio('Female', 'F', controller.gender,
+                          (v) => controller.setGender(v)),
+                    ],
+                  ),
+
+                  const SizedBox(height: 24),
+                  _buildLabel('PASSWORD', Icons.lock_outline),
+                  _buildTextField(
+                    'Enter Password',
+                    controller: controller.passwordController,
+                    obscureText: controller.obscurePassword,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        controller.obscurePassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                        color: Colors.grey,
+                      ),
+                      onPressed: controller.toggleObscurePassword,
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+                  _buildLabel('CONFIRM PASSWORD', Icons.lock_outline),
+                  _buildTextField(
+                    'Confirm Password',
+                    controller: controller.confirmPasswordController,
+                    obscureText: controller.obscureConfirmPassword,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        controller.obscureConfirmPassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                        color: Colors.grey,
+                      ),
+                      onPressed: controller.toggleObscureConfirmPassword,
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+                  _buildLabel('EMAIL (OPTIONAL)', Icons.email_outlined),
+                  _buildTextField('Enter Your Email',
+                      controller: controller.emailController,
+                      keyboardType: TextInputType.emailAddress),
+
+                  const SizedBox(height: 24),
+                  _buildLabel('ADDRESS', Icons.location_on_outlined),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildTextField(
+                          'Enter your full address',
+                          controller: controller.addressController,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        height: 52,
+                        child: ElevatedButton.icon(
+                          onPressed: controller.isGettingLocation
+                              ? null
+                              : () => controller.getCurrentLocation(context),
+                          icon: controller.isGettingLocation
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2),
+                                )
+                              : const Icon(Icons.my_location, size: 18),
+                          label: const Text('Use current',
+                              style: TextStyle(fontSize: 12)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF2D2E4D),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 12),
                           ),
                         ),
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 20),
-              ],
+
+                  const SizedBox(height: 24),
+                  _buildLabel('LANDMARK (OPTIONAL)', Icons.flag_outlined),
+                  _buildTextField(
+                      'Enter landmark (e.g. Near City Park)',
+                      controller: controller.landmarkController),
+
+                  const SizedBox(height: 40),
+                  CustomButton(
+                    text: 'Create Account',
+                    isLoading: controller.isLoading,
+                    onPressed: () async {
+                      final mobile = await controller.register(context);
+                      if (mobile != null && context.mounted) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => OtpScreen(
+                              mobile: mobile,
+                              flow: 'registration',
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                  ),
+
+                  const SizedBox(height: 24),
+                  Center(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text("Already registered? "),
+                        GestureDetector(
+                          onTap: () => Navigator.pop(context),
+                          child: const Text(
+                            'Sign in',
+                            style: TextStyle(
+                              color: Color(0xFF2D2E4D),
+                              fontWeight: FontWeight.bold,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
             ),
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
-  Widget _buildRadio(String label, String value, String groupValue, Function(String) onChanged) {
+  Widget _buildRadio(String label, String value, String groupValue,
+      Function(String) onChanged) {
     return GestureDetector(
       onTap: () => onChanged(value),
       child: Row(
         children: [
-          SizedBox(
+            SizedBox(
             height: 24,
             width: 24,
             child: Radio<String>(
@@ -310,7 +352,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
       onTap: onTap,
       keyboardType: keyboardType,
       inputFormatters: inputFormatters,
-      style: const TextStyle(color: Color(0xFF2D3436), fontWeight: FontWeight.w600),
+      style: const TextStyle(
+          color: Color(0xFF2D3436), fontWeight: FontWeight.w600),
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
@@ -321,7 +364,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
     );
   }

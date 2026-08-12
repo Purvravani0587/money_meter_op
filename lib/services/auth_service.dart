@@ -363,6 +363,8 @@ class AuthService {
 
   static Map<String, String> buildHomeScreenDataBody({required int familyId}) {
     return {
+      'fu_iFamilyId': familyId.toString(),
+      'fu_id': familyId.toString(),
       'fInc_familyId': familyId.toString(),
       'finc_familyId': familyId.toString(),
       'fex_familyId': familyId.toString(),
@@ -510,6 +512,7 @@ class AuthService {
     int startRow = 0,
   }) {
     return {
+      'fu_iFamilyId': familyId.toString(),
       'familyId': familyId.toString(),
       'family_id': familyId.toString(),
       'fInc_familyId': familyId.toString(),
@@ -523,6 +526,7 @@ class AuthService {
     int startRow = 0,
   }) {
     return {
+      'fu_iFamilyId': familyId.toString(),
       'familyId': familyId.toString(),
       'family_id': familyId.toString(),
       'fex_familyId': familyId.toString(),
@@ -567,11 +571,14 @@ class AuthService {
     required int familyId,
     required int startRow,
     required int expenseId,
+    int? userId,
   }) {
     return {
       'fex_familyId': familyId.toString(),
+      'fu_iFamilyId': familyId.toString(),
       'startRow': startRow.toString(),
       'fex_id': expenseId.toString(),
+      'fu_id': (userId ?? familyId).toString(),
     };
   }
 
@@ -674,10 +681,18 @@ class AuthService {
     required String username,
     required String password,
   }) async {
-    final decoded = await _post(
-      Uri.parse(_apiUrl('api/v1', 'member-login')),
-      body: {'username': username, 'password': password},
-    );
+    dynamic decoded;
+    try {
+      decoded = await _post(
+        Uri.parse('http://moneymeter.biz/api/v1/member-login'),
+        body: {'username': username, 'password': password},
+      );
+    } catch (_) {
+      decoded = await _post(
+        Uri.parse(_apiUrl('api/v1', 'member-login')),
+        body: {'username': username, 'password': password},
+      );
+    }
 
     // If API returned a token, persist it for session persistence
     if (decoded is Map<String, dynamic>) {
@@ -759,6 +774,30 @@ class AuthService {
         await saveFamilyId(familyId);
       }
 
+      // Extract and save fu_id (userId) if present in login response
+      int? userId;
+      dynamic findUserId(dynamic obj) {
+        if (obj is! Map) return null;
+        for (final k in ['fu_id', 'user_id', 'userId', 'id']) {
+          if (obj.containsKey(k) && obj[k] != null) {
+            final parsed = num.tryParse(obj[k].toString());
+            if (parsed != null && parsed > 0) return parsed.toInt();
+          }
+        }
+        return null;
+      }
+
+      userId = findUserId(decoded);
+      if (userId == null && decoded.containsKey('data')) {
+        userId = findUserId(decoded['data']);
+      }
+      if (userId == null && decoded.containsKey('user')) {
+        userId = findUserId(decoded['user']);
+      }
+      if (userId != null) {
+        await saveUserId(userId);
+      }
+
       // Save the username used to login (assuming it's the mobile number)
       try {
         if (username.isNotEmpty) await saveUserMobile(username);
@@ -814,6 +853,7 @@ class AuthService {
   static const String _kUserNameKey = 'user_name';
   static const String _kUserMobileKey = 'user_mobile';
   static const String _kFamilyIdKey = 'family_id';
+  static const String _kUserIdKey = 'user_id';
   static const String _kAuthMethodPrefix = 'auth_method_';
 
   static Future<SharedPreferences> getSharedPreferences() async {
@@ -915,6 +955,22 @@ class AuthService {
     }
   }
 
+  static Future<void> saveUserId(int userId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(_kUserIdKey, userId);
+    } catch (_) {}
+  }
+
+  static Future<int> getUserId() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getInt(_kUserIdKey) ?? await getFamilyId();
+    } catch (_) {
+      return await getFamilyId();
+    }
+  }
+
   static Future<Map<String, dynamic>> merchantLogin({
     required String username,
     required String password,
@@ -990,6 +1046,40 @@ class AuthService {
         token = data['token']?.toString() ?? data['access_token']?.toString();
       }
       if (token != null && token.isNotEmpty) await saveAuthToken(token);
+
+      // Extract and save familyId / fu_iFamilyId for new user registration
+      int? familyId;
+      dynamic findFamilyId(dynamic obj) {
+        if (obj is! Map) return null;
+        for (final k in [
+          'fu_iFamilyId',
+          'fu_id',
+          'familyId',
+          'family_id',
+          'fm_id',
+          'fm_iFamilyId',
+          'fu_familyId',
+          'fu_fm_id',
+          'fInc_familyId',
+          'fex_familyId',
+          'fEx_familyId',
+          'iFamilyId',
+        ]) {
+          if (obj.containsKey(k) && obj[k] != null) {
+            final parsed = num.tryParse(obj[k].toString());
+            if (parsed != null && parsed > 0) return parsed.toInt();
+          }
+        }
+        return null;
+      }
+
+      familyId = findFamilyId(decoded);
+      if (familyId == null && decoded.containsKey('data')) {
+        familyId = findFamilyId(decoded['data']);
+      }
+      if (familyId != null) {
+        await saveFamilyId(familyId);
+      }
     }
 
     return decoded is Map<String, dynamic>
@@ -1274,14 +1364,21 @@ class AuthService {
     required int familyId,
     int startRow = 0,
     required int expenseId,
+    int? userId,
   }) async {
+    final resolvedUserId = userId ?? await getUserId();
     return _post(
       Uri.parse(_apiUrl('member-api/v1', 'get-familyexpenseview')),
-      queryParameters: {'fex_id': expenseId.toString()},
+      queryParameters: {
+        'fex_id': expenseId.toString(),
+        'fex_familyId': familyId.toString(),
+        'fu_id': resolvedUserId.toString(),
+      },
       body: buildFamilyExpenseViewBody(
         familyId: familyId,
         startRow: startRow,
         expenseId: expenseId,
+        userId: resolvedUserId,
       ),
     );
   }

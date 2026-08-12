@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import '../../services/auth_service.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/responsive_center.dart';
@@ -58,7 +57,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     
     if (mounted) {
       UIUtils.showTopMessage(context, 'Profile updated successfully');
-      Get.back();
+      Navigator.pop(context);
     }
     setState(() => _isLoading = false);
   }
@@ -73,7 +72,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Color(0xFF2D2E4D)),
-          onPressed: () => Get.back(),
+          onPressed: () => Navigator.pop(context),
         ),
       ),
       body: SafeArea(

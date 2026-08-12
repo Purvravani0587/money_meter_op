@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:get/get.dart';
 import '../../controllers/auth/reset_password_controller.dart';
 import '../../widgets/custom_button.dart';
+import 'login_screen.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   final String mobile;
@@ -18,12 +18,18 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   @override
   void initState() {
     super.initState();
-    controller = Get.put(ResetPasswordController());
+    controller = ResetPasswordController();
+    controller.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -34,7 +40,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 IconButton(
-                  onPressed: () => Get.back(),
+                  onPressed: () => Navigator.pop(context),
                   icon: const Icon(Icons.arrow_back),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
@@ -72,38 +78,53 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 ),
                 const SizedBox(height: 40),
                 _buildLabel('NEW PASSWORD', Icons.lock_outline),
-                Obx(() => _buildTextField(
+                _buildTextField(
                   'Enter Password',
                   controller: controller.passwordController,
-                  obscureText: controller.obscurePassword.value,
+                  obscureText: controller.obscurePassword,
                   suffixIcon: IconButton(
                     icon: Icon(
-                      controller.obscurePassword.value ? Icons.visibility_off : Icons.visibility,
+                      controller.obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
                       color: Colors.grey,
                     ),
                     onPressed: controller.toggleObscurePassword,
                   ),
-                )),
+                ),
                 const SizedBox(height: 24),
                 _buildLabel('CONFIRM PASSWORD', Icons.lock_outline),
-                Obx(() => _buildTextField(
+                _buildTextField(
                   'Confirm Password',
                   controller: controller.confirmPasswordController,
-                  obscureText: controller.obscureConfirmPassword.value,
+                  obscureText: controller.obscureConfirmPassword,
                   suffixIcon: IconButton(
                     icon: Icon(
-                      controller.obscureConfirmPassword.value ? Icons.visibility_off : Icons.visibility,
+                      controller.obscureConfirmPassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
                       color: Colors.grey,
                     ),
                     onPressed: controller.toggleObscureConfirmPassword,
                   ),
-                )),
+                ),
                 const SizedBox(height: 40),
-                Obx(() => CustomButton(
+                CustomButton(
                   text: 'Reset Password',
-                  isLoading: controller.isLoading.value,
-                  onPressed: () => controller.resetPassword(widget.mobile),
-                )),
+                  isLoading: controller.isLoading,
+                  onPressed: () async {
+                    final success =
+                        await controller.resetPassword(context, widget.mobile);
+                    if (success && context.mounted) {
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const LoginScreen()),
+                        (_) => false,
+                      );
+                    }
+                  },
+                ),
               ],
             ),
           ),
@@ -145,7 +166,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       obscureText: obscureText,
       keyboardType: keyboardType,
       inputFormatters: inputFormatters,
-      style: const TextStyle(color: Color(0xFF2D3436), fontWeight: FontWeight.w600),
+      style: const TextStyle(
+          color: Color(0xFF2D3436), fontWeight: FontWeight.w600),
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
@@ -156,7 +178,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
     );
   }

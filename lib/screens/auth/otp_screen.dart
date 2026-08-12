@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter/services.dart';
 import '../../controllers/auth/otp_controller.dart';
 import '../../widgets/custom_button.dart';
 import '../../utils/ui_utils.dart';
+import '../dashboard/dashboard_screen.dart';
+import 'login_screen.dart';
+import 'reset_password_screen.dart';
 
 class OtpScreen extends StatefulWidget {
   final String mobile;
-  final String flow; // 'registration', 'forgot_password', 'profile_edit'
+  final String flow; // 'registration', 'forgot_password', 'login'
 
   const OtpScreen({
-    super.key, 
-    required this.mobile, 
+    super.key,
+    required this.mobile,
     this.flow = 'registration',
   });
 
@@ -24,13 +27,46 @@ class _OtpScreenState extends State<OtpScreen> {
   @override
   void initState() {
     super.initState();
-    Get.delete<OtpController>();
-    controller = Get.put(OtpController());
+    controller = OtpController();
+    controller.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  void _handleVerify() {
+    final flow = controller.verifyOtp(context, widget.mobile, widget.flow);
+    if (flow == null) return;
+
+    Future.delayed(const Duration(seconds: 1), () {
+      if (!mounted) return;
+      if (flow == 'forgot_password') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+              builder: (_) => ResetPasswordScreen(mobile: widget.mobile)),
+        );
+      } else if (flow == 'login') {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const DashboardScreen()),
+          (_) => false,
+        );
+      } else {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+          (_) => false,
+        );
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -41,7 +77,7 @@ class _OtpScreenState extends State<OtpScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 IconButton(
-                  onPressed: () => Get.back(),
+                  onPressed: () => Navigator.pop(context),
                   icon: const Icon(Icons.arrow_back),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
@@ -100,7 +136,9 @@ class _OtpScreenState extends State<OtpScreen> {
                         textAlign: TextAlign.center,
                         keyboardType: TextInputType.number,
                         maxLength: 1,
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                        style: const TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
                         decoration: InputDecoration(
                           counterText: '',
                           filled: true,
@@ -122,11 +160,11 @@ class _OtpScreenState extends State<OtpScreen> {
                   }),
                 ),
                 const SizedBox(height: 40),
-                Obx(() => CustomButton(
+                CustomButton(
                   text: 'Verify',
-                  isLoading: controller.isLoading.value,
-                  onPressed: () => controller.verifyOtp(widget.mobile, widget.flow),
-                )),
+                  isLoading: controller.isLoading,
+                  onPressed: _handleVerify,
+                ),
                 const SizedBox(height: 24),
                 Center(
                   child: TextButton(

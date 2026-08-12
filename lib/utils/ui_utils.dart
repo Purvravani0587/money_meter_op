@@ -1,29 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 
 class UIUtils {
-  static void showTopMessage(BuildContext? context, String message, {bool isError = false}) {
-    final ctx = context ?? Get.context ?? Get.overlayContext;
-    if (ctx == null) {
-      Get.snackbar(
-        isError ? 'Attention' : 'Success',
-        message,
-        backgroundColor: isError ? const Color(0xFFD32F2F) : const Color(0xFF2E7D32),
-        colorText: Colors.white,
-      );
-      return;
-    }
+  static void showTopMessage(BuildContext? context, String message,
+      {bool isError = false}) {
+    if (context == null) return;
 
-    final messenger = ScaffoldMessenger.maybeOf(ctx);
-    if (messenger == null) {
-      Get.snackbar(
-        isError ? 'Attention' : 'Success',
-        message,
-        backgroundColor: isError ? const Color(0xFFD32F2F) : const Color(0xFF2E7D32),
-        colorText: Colors.white,
-      );
-      return;
-    }
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (messenger == null) return;
 
     messenger.showSnackBar(
       SnackBar(
@@ -74,4 +57,3 @@ class UIUtils {
     );
   }
 }
-

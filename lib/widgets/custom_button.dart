@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 
 class CustomButton extends StatelessWidget {
@@ -27,7 +28,7 @@ class CustomButton extends StatelessWidget {
         onPressed: isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: backgroundColor,
-          disabledBackgroundColor: backgroundColor.withValues(alpha: 0.6),
+          disabledBackgroundColor: backgroundColor.withAlpha((0.6 * 255).round()),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:get/get.dart';
 import '../../controllers/auth/forgot_password_controller.dart';
 import '../../widgets/custom_button.dart';
+import 'otp_screen.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -17,12 +17,18 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   @override
   void initState() {
     super.initState();
-    controller = Get.put(ForgotPasswordController());
+    controller = ForgotPasswordController();
+    controller.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -33,7 +39,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 IconButton(
-                  onPressed: () => Get.back(),
+                  onPressed: () => Navigator.pop(context),
                   icon: const Icon(Icons.arrow_back),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
@@ -84,17 +90,19 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         alignment: Alignment.center,
-                        child: Obx(() => Row(
+                        child: Row(
                           children: [
-                            Text(controller.countryFlag.value, style: const TextStyle(fontSize: 20)),
+                            Text(controller.countryFlag,
+                                style: const TextStyle(fontSize: 20)),
                             const SizedBox(width: 4),
                             Text(
-                              controller.countryCode.value,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                              controller.countryCode,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 16),
                             ),
                             const Icon(Icons.arrow_drop_down, size: 20),
                           ],
-                        )),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -108,25 +116,40 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         ],
                         decoration: InputDecoration(
                           hintText: 'Enter Mobile No.',
-                          hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
+                          hintStyle:
+                              const TextStyle(color: Colors.grey, fontSize: 14),
                           filled: true,
                           fillColor: const Color(0xFFF0F0F0),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
                           ),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 16),
                         ),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 40),
-                Obx(() => CustomButton(
+                CustomButton(
                   text: 'Send OTP',
-                  isLoading: controller.isLoading.value,
-                  onPressed: controller.sendOtp,
-                )),
+                  isLoading: controller.isLoading,
+                  onPressed: () async {
+                    final mobile = await controller.sendOtp(context);
+                    if (mobile != null && context.mounted) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => OtpScreen(
+                            mobile: mobile,
+                            flow: 'forgot_password',
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                ),
               ],
             ),
           ),

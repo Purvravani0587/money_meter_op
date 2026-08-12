@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:get/get.dart';
 import '../../controllers/auth/login_controller.dart';
 import '../../widgets/custom_button.dart';
 import '../../widgets/responsive_center.dart';
+import '../dashboard/dashboard_screen.dart';
 import 'signup_screen.dart';
 import 'forgot_password_screen.dart';
 
@@ -20,172 +20,162 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    controller = Get.put(LoginController());
+    controller = LoginController();
+    controller.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: ResponsiveCenter(
           child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 40),
-                Center(
-                  child: Column(
+            physics: const BouncingScrollPhysics(),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 40),
+                  Center(
+                    child: Column(
+                      children: [
+                        Image.asset(
+                          'assets/images/logo.png',
+                          width: 120,
+                          height: 120,
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Money Meter',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF2D2E4D),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                  const Text(
+                    'Welcome back',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF2D3436),
+                    ),
+                  ),
+                  const Text(
+                    'Sign in to continue to Money Meter',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                  _buildLabel('MOBILE NUMBER', Icons.phone_android_outlined),
+                  Row(
                     children: [
-                      Image.asset(
-                        'assets/images/logo.png',
-                        width: 120,
-                        height: 120,
+                      GestureDetector(
+                        onTap: () => controller.selectCountryCode(context),
+                        child: Container(
+                          height: 56,
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF0F0F0),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          alignment: Alignment.center,
+                          child: Row(
+                            children: [
+                              Text(controller.countryFlag,
+                                  style: const TextStyle(fontSize: 20)),
+                              const SizedBox(width: 4),
+                              Text(
+                                controller.countryCode,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold, fontSize: 16),
+                              ),
+                              const Icon(Icons.arrow_drop_down, size: 20),
+                            ],
+                          ),
+                        ),
                       ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'Money Meter',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF2D2E4D),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _buildTextField(
+                          'Enter Mobile No.',
+                          controller: controller.mobileController,
+                          keyboardType: TextInputType.phone,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(10),
+                          ],
                         ),
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 40),
-                const Text(
-                  'Welcome back',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF2D3436),
-                  ),
-                ),
-                const Text(
-                  'Sign in to continue to Money Meter',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey,
-                  ),
-                ),
-                const SizedBox(height: 40),
-                _buildLabel('MOBILE NUMBER', Icons.phone_android_outlined),
-                Row(
-                  children: [
-                    GestureDetector(
-                      onTap: () => controller.selectCountryCode(context),
-                      child: Container(
-                        height: 56,
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF0F0F0),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        alignment: Alignment.center,
-                        child: Obx(() => Row(
-                          children: [
-                            Text(controller.countryFlag.value, style: const TextStyle(fontSize: 20)),
-                            const SizedBox(width: 4),
-                            Text(
-                              controller.countryCode.value,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                            ),
-                            const Icon(Icons.arrow_drop_down, size: 20),
-                          ],
-                        )),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _buildTextField(
-                        'Enter Mobile No.',
-                        controller: controller.mobileController,
-                        keyboardType: TextInputType.phone,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                          LengthLimitingTextInputFormatter(10),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                
-                const SizedBox(height: 24),
-                _buildLabel('PASSWORD', Icons.lock_outline),
-                Obx(() => _buildTextField(
-                  'Enter Password',
-                  controller: controller.passwordController,
-                  focusNode: controller.passwordFocusNode,
-                  obscureText: controller.obscurePassword.value,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      controller.obscurePassword.value ? Icons.visibility_off : Icons.visibility,
-                      color: Colors.grey.shade700,
-                    ),
-                    onPressed: controller.toggleObscure,
-                  ),
-                )),
 
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    GestureDetector(
-                      onTap: controller.toggleRememberMe,
-                      child: Row(
-                        children: [
-                          Obx(() => SizedBox(
-                            height: 24,
-                            width: 24,
-                            child: Checkbox(
-                              value: controller.rememberMe.value,
-                              activeColor: const Color(0xFF2D2E4D),
-                              onChanged: (value) => controller.toggleRememberMe(),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
+                  const SizedBox(height: 24),
+                  _buildLabel('PASSWORD', Icons.lock_outline),
+                  _buildTextField(
+                    'Enter Password',
+                    controller: controller.passwordController,
+                    focusNode: controller.passwordFocusNode,
+                    obscureText: controller.obscurePassword,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        controller.obscurePassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                        color: Colors.grey.shade700,
+                      ),
+                      onPressed: controller.toggleObscure,
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      GestureDetector(
+                        onTap: controller.toggleRememberMe,
+                        child: Row(
+                          children: [
+                            SizedBox(
+                              height: 24,
+                              width: 24,
+                              child: Checkbox(
+                                value: controller.rememberMe,
+                                activeColor: const Color(0xFF2D2E4D),
+                                onChanged: (value) =>
+                                    controller.toggleRememberMe(),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
                               ),
                             ),
-                          )),
-                          const SizedBox(width: 8),
-                          const Text('Remember me'),
-                        ],
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () => Get.to(() => const ForgotPasswordScreen()),
-                      child: const Text(
-                        'Forgot Password?',
-                        style: TextStyle(
-                          color: Color(0xFF2D2E4D),
-                          fontWeight: FontWeight.bold,
-                          decoration: TextDecoration.underline,
+                            const SizedBox(width: 8),
+                            const Text('Remember me'),
+                          ],
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 30),
-                Obx(() => CustomButton(
-                  text: 'Sign In',
-                  isLoading: controller.isLoading.value,
-                  onPressed: controller.login,
-                )),
-                const SizedBox(height: 40),
-                Center(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text("New to Money Meter? "),
-                      GestureDetector(
-                        onTap: () => Get.to(() => const SignUpScreen()),
+                      TextButton(
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const ForgotPasswordScreen()),
+                        ),
                         child: const Text(
-                          'Create account',
+                          'Forgot Password?',
                           style: TextStyle(
                             color: Color(0xFF2D2E4D),
                             fontWeight: FontWeight.bold,
@@ -195,16 +185,67 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 20),
-              ],
+                  const SizedBox(height: 30),
+                  CustomButton(
+                    text: 'Sign In',
+                    isLoading: controller.isLoading,
+                    onPressed: () async {
+                      final success = await controller.login(context);
+                      if (success && context.mounted) {
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const DashboardScreen()),
+                          (_) => false,
+                        );
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 40),
+                  Center(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text("New to Money Meter? "),
+                        GestureDetector(
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const SignUpScreen()),
+                          ),
+                          child: const Text(
+                            'Create account',
+                            style: TextStyle(
+                              color: Color(0xFF2D2E4D),
+                              fontWeight: FontWeight.bold,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Center(
+                    child: Text(
+                      controller.familyIdText,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey.shade600,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
             ),
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildLabel(String text, IconData icon) {
     return Padding(
@@ -252,7 +293,8 @@ class _LoginScreenState extends State<LoginScreen> {
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
     );
   }

@@ -35,6 +35,9 @@ class _HomeScreenState extends State<HomeScreen> {
   String _unpaidRecAmount = '₹0';
   int _unpaidRecCount = 0;
 
+  List<FamilyTransactionItem> _recentExpensesList = [];
+  String _totalExpenseListAmount = '₹0';
+
   bool _hasLoadedHomeData = false;
   bool _isLoadingHomeData = false;
 
@@ -208,6 +211,23 @@ class _HomeScreenState extends State<HomeScreen> {
       num upcomingExpSum = sumList(upcomingExpItems);
       num upcomingIncSum = sumList(upcomingIncItems);
 
+      // Consolidate Expense List for Home Screen display
+      List<FamilyTransactionItem> combinedExpList = [];
+      combinedExpList.addAll(expenseItems);
+      for (final item in unpaidExpList) {
+        if (!combinedExpList.any((e) => e.name == item.name && e.amount == item.amount)) {
+          combinedExpList.add(item);
+        }
+      }
+      for (final item in paidExpList) {
+        if (!combinedExpList.any((e) => e.name == item.name && e.amount == item.amount)) {
+          combinedExpList.add(item);
+        }
+      }
+
+      num combinedExpSum = sumList(combinedExpList);
+      num expTotalSumFinal = combinedExpSum > 0 ? combinedExpSum : projExpNum;
+
       setState(() {
         _mtdExpense = formatVal(mtdExpNum);
         _mtdIncome = formatVal(mtdIncNum);
@@ -225,6 +245,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
         _unpaidRecAmount = formatVal(unpaidExpSum);
         _unpaidRecCount = unpaidExpList.length;
+
+        _recentExpensesList = combinedExpList;
+        _totalExpenseListAmount = formatVal(expTotalSumFinal);
 
         _hasLoadedHomeData = true;
         _isLoadingHomeData = false;
@@ -529,6 +552,158 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ),
                   ),
+
+                  const SizedBox(height: 24),
+
+                  // Expense List Header Row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Expense List',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF232038),
+                        ),
+                      ),
+                      TextButton.icon(
+                        onPressed: () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const RecurringExpensesScreen(),
+                            ),
+                          );
+                          _loadHomeScreenData(showLoading: false);
+                        },
+                        icon: const Icon(Icons.arrow_forward_rounded, size: 16),
+                        label: const Text(
+                          'See All',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  // Total Expense Amount Banner
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFDEEEF),
+                      borderRadius: BorderRadius.circular(16.0),
+                      border: Border.all(color: const Color(0xFFF9D5D8)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.receipt_long_rounded, color: Color(0xFFE55B68), size: 20),
+                            SizedBox(width: 8),
+                            Text(
+                              'Total Expense Amount',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                                color: Color(0xFF232038),
+                              ),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          _totalExpenseListAmount,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 17,
+                            color: Color(0xFFE55B68),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Expense Items List
+                  if (_recentExpensesList.isEmpty)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Center(
+                        child: Text(
+                          'No expense records found',
+                          style: TextStyle(color: Colors.grey, fontSize: 14),
+                        ),
+                      ),
+                    )
+                  else
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20.0),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x06000000),
+                            blurRadius: 12,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: _recentExpensesList.length > 5 ? 5 : _recentExpensesList.length,
+                        separatorBuilder: (context, index) =>
+                            const Divider(height: 1, color: Color(0xFFF2EEF7)),
+                        itemBuilder: (context, index) {
+                          final item = _recentExpensesList[index];
+                          return ListTile(
+                            contentPadding:
+                                const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                            leading: Container(
+                              width: 42,
+                              height: 42,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFDEEEF),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(Icons.arrow_downward_rounded,
+                                  color: Color(0xFFE55B68), size: 20),
+                            ),
+                            title: Text(
+                              item.name.isNotEmpty ? item.name : 'Expense Transaction',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                                color: Color(0xFF232038),
+                              ),
+                            ),
+                            subtitle: Text(
+                              item.date.isNotEmpty
+                                  ? item.date
+                                  : (item.status.isNotEmpty ? item.status : 'Expense'),
+                              style: const TextStyle(fontSize: 12, color: Colors.grey),
+                            ),
+                            trailing: Text(
+                              item.amount,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                                color: Color(0xFFE55B68),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
                 ],
               ),
             ),

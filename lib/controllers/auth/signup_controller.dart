@@ -1,15 +1,13 @@
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:country_picker/country_picker.dart';
 import '../../services/auth_service.dart';
 import '../../utils/ui_utils.dart';
-import '../../screens/auth/otp_screen.dart';
 
-class SignUpController extends GetxController {
+class SignUpController extends ChangeNotifier {
   final fullNameController = TextEditingController();
   final mobileController = TextEditingController();
   final emailController = TextEditingController();
@@ -19,35 +17,46 @@ class SignUpController extends GetxController {
   final landmarkController = TextEditingController();
   final dobController = TextEditingController();
 
-  final countryCode = '+91'.obs;
-  final countryFlag = '🇮🇳'.obs;
-  final gender = 'M'.obs;
-  final obscurePassword = true.obs;
-  final obscureConfirmPassword = true.obs;
-  final isLoading = false.obs;
-  final isGettingLocation = false.obs;
-  
+  String countryCode = '+91';
+  String countryFlag = '🇮🇳';
+  String gender = 'M';
+  bool obscurePassword = true;
+  bool obscureConfirmPassword = true;
+  bool isLoading = false;
+  bool isGettingLocation = false;
+
   String currentLatitude = '';
   String currentLongitude = '';
 
-  void setGender(String value) => gender.value = value;
-  void toggleObscurePassword() => obscurePassword.value = !obscurePassword.value;
-  void toggleObscureConfirmPassword() => obscureConfirmPassword.value = !obscureConfirmPassword.value;
+  void setGender(String value) {
+    gender = value;
+    notifyListeners();
+  }
+
+  void toggleObscurePassword() {
+    obscurePassword = !obscurePassword;
+    notifyListeners();
+  }
+
+  void toggleObscureConfirmPassword() {
+    obscureConfirmPassword = !obscureConfirmPassword;
+    notifyListeners();
+  }
 
   void selectCountryCode(BuildContext context) {
     showCountryPicker(
       context: context,
       showPhoneCode: true,
       onSelect: (Country country) {
-        countryCode.value = '+${country.phoneCode}';
-        countryFlag.value = country.flagEmoji;
+        countryCode = '+${country.phoneCode}';
+        countryFlag = country.flagEmoji;
+        notifyListeners();
       },
     );
   }
 
   Future<void> selectDate(BuildContext context) async {
     final now = DateTime.now();
-    // Enforce 18+ age restriction
     final maxDate = DateTime(now.year - 18, now.month, now.day);
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -56,7 +65,8 @@ class SignUpController extends GetxController {
       lastDate: maxDate,
     );
     if (picked != null) {
-      dobController.text = '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
+      dobController.text =
+          '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
     }
   }
 
@@ -66,7 +76,6 @@ class SignUpController extends GetxController {
       final parts = rawDob.split('/');
       if (parts.length == 3) {
         if (parts[0].length <= 2 && parts[2].length == 4) {
-          // DD/MM/YYYY to YYYY-MM-DD
           return '${parts[2]}-${parts[1].padLeft(2, '0')}-${parts[0].padLeft(2, '0')}';
         }
       }
@@ -74,7 +83,6 @@ class SignUpController extends GetxController {
       final parts = rawDob.split('-');
       if (parts.length == 3) {
         if (parts[0].length <= 2 && parts[2].length == 4) {
-          // DD-MM-YYYY to YYYY-MM-DD
           return '${parts[2]}-${parts[1].padLeft(2, '0')}-${parts[0].padLeft(2, '0')}';
         }
       }
@@ -82,12 +90,13 @@ class SignUpController extends GetxController {
     return rawDob;
   }
 
-  Future<void> getCurrentLocation() async {
-    isGettingLocation.value = true;
+  Future<void> getCurrentLocation(BuildContext context) async {
+    isGettingLocation = true;
+    notifyListeners();
     try {
       if (!kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
         UIUtils.showTopMessage(
-          Get.context,
+          context,
           'Location feature is not supported on Desktop. Please enter your address manually.',
           isError: true,
         );
@@ -119,8 +128,7 @@ class SignUpController extends GetxController {
 
       String addressText = '';
       try {
-        final geocoding = Geocoding();
-        final placemarks = await geocoding.placemarkFromCoordinates(
+        final placemarks = await placemarkFromCoordinates(
           position.latitude,
           position.longitude,
         );
@@ -134,14 +142,14 @@ class SignUpController extends GetxController {
             place.postalCode,
             place.country,
           ]
-              .where((v) => v != null && v.trim().isNotEmpty)
-              .map((v) => v!.trim())
+              .where((v) => v != null && v.toString().trim().isNotEmpty)
+              .map((v) => v.toString().trim())
               .toSet()
               .toList();
           addressText = parts.join(', ');
         }
       } catch (_) {
-        // Fallback to coordinates if reverse geocoding fails or plugin is not supported
+        // Fallback to coordinates if reverse geocoding fails
       }
 
       if (addressText.isEmpty) {
@@ -150,7 +158,8 @@ class SignUpController extends GetxController {
       }
 
       addressController.text = addressText;
-      UIUtils.showTopMessage(Get.context, 'Current location captured');
+      // ignore: use_build_context_synchronously
+      UIUtils.showTopMessage(context, 'Current location captured');
     } catch (e) {
       final msg = e
           .toString()
@@ -160,46 +169,50 @@ class SignUpController extends GetxController {
           (msg.contains('Null check') || msg.contains('null'))
               ? 'Location not available on this device. Please enter address manually.'
               : msg;
-      UIUtils.showTopMessage(Get.context, cleanMsg, isError: true);
+      // ignore: use_build_context_synchronously
+      UIUtils.showTopMessage(context, cleanMsg, isError: true);
     } finally {
-      isGettingLocation.value = false;
+      isGettingLocation = false;
+      notifyListeners();
     }
   }
 
-  Future<void> register() async {
+  /// Returns the mobile number on success (for navigation), null on failure.
+  Future<String?> register(BuildContext context) async {
     if (fullNameController.text.trim().isEmpty ||
         mobileController.text.trim().isEmpty ||
         dobController.text.trim().isEmpty ||
         addressController.text.trim().isEmpty) {
-      UIUtils.showTopMessage(Get.context, 'Please fill all required fields', isError: true);
-      return;
+      UIUtils.showTopMessage(context, 'Please fill all required fields', isError: true);
+      return null;
     }
 
     if (mobileController.text.trim().length != 10) {
-      UIUtils.showTopMessage(Get.context, 'Mobile number must be 10 digits', isError: true);
-      return;
+      UIUtils.showTopMessage(context, 'Mobile number must be 10 digits', isError: true);
+      return null;
     }
 
     if (passwordController.text.trim().isEmpty || confirmPasswordController.text.trim().isEmpty) {
-      UIUtils.showTopMessage(Get.context, 'Please enter password', isError: true);
-      return;
+      UIUtils.showTopMessage(context, 'Please enter password', isError: true);
+      return null;
     }
     if (passwordController.text.length < 6) {
-      UIUtils.showTopMessage(Get.context, 'Password must be at least 6 characters', isError: true);
-      return;
+      UIUtils.showTopMessage(context, 'Password must be at least 6 characters', isError: true);
+      return null;
     }
     if (passwordController.text != confirmPasswordController.text) {
-      UIUtils.showTopMessage(Get.context, 'Passwords do not match', isError: true);
-      return;
+      UIUtils.showTopMessage(context, 'Passwords do not match', isError: true);
+      return null;
     }
 
-    isLoading.value = true;
+    isLoading = true;
+    notifyListeners();
     try {
       final formattedDob = _formatDobForApi(dobController.text);
       final result = await AuthService.register(
         fullName: fullNameController.text.trim(),
         dob: formattedDob,
-        gender: gender.value,
+        gender: gender,
         email: emailController.text.trim(),
         mobile: mobileController.text.trim(),
         password: passwordController.text.trim(),
@@ -210,17 +223,21 @@ class SignUpController extends GetxController {
         longitude: currentLongitude.isNotEmpty ? currentLongitude : '1',
       );
 
-      UIUtils.showTopMessage(Get.context, result['message']?.toString() ?? 'Registration successful');
-      Get.to(() => OtpScreen(mobile: mobileController.text.trim(), flow: 'registration'));
+      // ignore: use_build_context_synchronously
+      UIUtils.showTopMessage(context, result['message']?.toString() ?? 'Registration successful');
+      return mobileController.text.trim();
     } catch (e) {
-      UIUtils.showTopMessage(Get.context, e.toString().replaceFirst('Exception: ', ''), isError: true);
+      // ignore: use_build_context_synchronously
+      UIUtils.showTopMessage(context, e.toString().replaceFirst('Exception: ', ''), isError: true);
+      return null;
     } finally {
-      isLoading.value = false;
+      isLoading = false;
+      notifyListeners();
     }
   }
 
   @override
-  void onClose() {
+  void dispose() {
     fullNameController.dispose();
     mobileController.dispose();
     emailController.dispose();
@@ -229,6 +246,6 @@ class SignUpController extends GetxController {
     addressController.dispose();
     landmarkController.dispose();
     dobController.dispose();
-    super.onClose();
+    super.dispose();
   }
 }
