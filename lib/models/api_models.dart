@@ -62,6 +62,14 @@ class HomeScreenSummary {
           return mergedJson[key];
         }
       }
+      for (final key in keys) {
+        final lowerKey = key.toLowerCase();
+        for (final entry in mergedJson.entries) {
+          if (entry.key.toLowerCase() == lowerKey && entry.value != null) {
+            return entry.value;
+          }
+        }
+      }
       return null;
     }
 
@@ -296,6 +304,22 @@ class FamilyTransactionItem {
         return _normalizeCurrency(value);
       }
     }
+    for (final entry in json.entries) {
+      final k = entry.key.toLowerCase();
+      if (k.contains('amount') ||
+          k.contains('amt') ||
+          k.contains('dcamount') ||
+          k.contains('namount') ||
+          k.contains('iamount') ||
+          k.contains('price') ||
+          k.contains('val')) {
+        if (entry.value != null &&
+            entry.value.toString().trim().isNotEmpty &&
+            entry.value.toString() != '0') {
+          return _normalizeCurrency(entry.value);
+        }
+      }
+    }
     return defaultValue;
   }
 
@@ -391,10 +415,16 @@ class FamilyTransactionItem {
         'invoiceAmount',
         'fInc_nAmount',
         'fInc_iAmount',
+        'fInc_dcAmount',
         'fex_nAmount',
         'fex_iAmount',
+        'fex_dcAmount',
         'fEx_nAmount',
         'fEx_iAmount',
+        'fEx_dcAmount',
+        'dcAmount',
+        'nAmount',
+        'iAmount',
         'value',
       ]),
       remaining: _extractCurrency(json, [

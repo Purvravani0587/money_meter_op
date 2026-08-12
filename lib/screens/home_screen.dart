@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'dart:io' show Platform;
+
 import '../models/api_models.dart';
 import '../services/auth_service.dart';
 import '../widgets/responsive_center.dart';
@@ -23,34 +22,21 @@ class _HomeScreenState extends State<HomeScreen> {
   String _mtdIncome = '₹0';
   String _projExpenses = '₹0';
   String _projIncome = '₹0';
-  String _netBalance = '₹0';
 
-  // 7 breakdown options metrics
-  int _unpaidExpCount = 0;
-  String _unpaidExpAmount = '₹0';
+  String _upcomingExpAmount = '₹0';
+  int _upcomingExpCount = 0;
 
-  int _pendingIncCount = 0;
-  String _pendingIncAmount = '₹0';
+  String _upcomingIncAmount = '₹0';
+  int _upcomingIncCount = 0;
 
-  int _unbilledExpCount = 0;
-  String _unbilledExpAmount = '₹0';
+  String _unbilledAmount = '₹0';
+  int _unbilledCount = 0;
 
-  int _paidExpCount = 0;
-  String _paidExpAmount = '₹0';
-
-  int _receivedIncCount = 0;
-  String _receivedIncAmount = '₹0';
-
-  int _unpaidBillsCount = 0;
-  String _unpaidBillsAmount = '₹0';
-
-  int _paidBillsCount = 0;
-  String _paidBillsAmount = '₹0';
+  String _unpaidRecAmount = '₹0';
+  int _unpaidRecCount = 0;
 
   bool _hasLoadedHomeData = false;
   bool _isLoadingHomeData = false;
-
-  bool get _isIOS => !kIsWeb && Platform.isIOS;
 
   @override
   void initState() {
@@ -81,8 +67,7 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final familyId = await AuthService.getFamilyId();
       final summary = await AuthService.getHomeScreenData(familyId: familyId);
-      
-      // Fetch full list of income and expense items to calculate true total sum
+
       List<FamilyTransactionItem> incomeItems = await AuthService.getAllIncome(familyId: familyId);
       if (incomeItems.isEmpty) {
         incomeItems = summary.upcomingIncome;
@@ -101,32 +86,27 @@ class _HomeScreenState extends State<HomeScreen> {
 
       List<FamilyTransactionItem> unbilledItemsList = summary.unbilledItems;
       if (unbilledItemsList.isEmpty) {
-        unbilledItemsList =
-            await AuthService.getUnbilledTransactions(familyId: familyId);
+        unbilledItemsList = await AuthService.getUnbilledTransactions(familyId: familyId);
       }
 
-      // Fetch unpaid expenses (Un Paid Recurring Expenses)
       List<FamilyTransactionItem> unpaidExpList = [];
       try {
         final res = await AuthService.getFamilyUnpaidExpense(familyId: familyId);
         unpaidExpList = FamilyTransactionItem.fromResponse(res);
       } catch (_) {}
 
-      // Fetch pending income (Pending Recurring Income)
       List<FamilyTransactionItem> pendingIncList = [];
       try {
         final res = await AuthService.getFamilyUnpaidIncome(familyId: familyId);
         pendingIncList = FamilyTransactionItem.fromResponse(res);
       } catch (_) {}
 
-      // Fetch paid expenses (Cur. Month Paid Recurring Expenses)
       List<FamilyTransactionItem> paidExpList = [];
       try {
         final res = await AuthService.getFamilyPaidExpense(familyId: familyId);
         paidExpList = FamilyTransactionItem.fromResponse(res);
       } catch (_) {}
 
-      // Fetch paid / received income (Cur. Month Received Recurring Income)
       List<FamilyTransactionItem> paidIncList = [];
       try {
         final res = await AuthService.getFamilyPaidIncome(familyId: familyId);
@@ -144,102 +124,107 @@ class _HomeScreenState extends State<HomeScreen> {
         return '₹${val.toStringAsFixed(val.truncateToDouble() == val ? 0 : 2)}';
       }
 
-      num sumList(List<FamilyTransactionItem> list) =>
-          list.fold<num>(0, (prev, item) => prev + parseAmount(item.amount));
-
-      num incomeTotalSum = sumList(incomeItems);
-      num expenseTotalSum = sumList(expenseItems);
-
-      num unpaidExpSum = sumList(unpaidExpList);
-      num pendingIncSum = sumList(pendingIncList);
-      num unbilledExpSum = sumList(unbilledItemsList);
-      num paidExpSum = sumList(paidExpList);
-      num paidIncSum = sumList(paidIncList);
-
-      // Bills calculation
-      int unpaidBillsCnt = unpaidExpList.length;
-      num unpaidBillsSum = unpaidExpSum;
-      int paidBillsCnt = paidExpList.length;
-      num paidBillsSum = paidExpSum;
-
-      try {
-        final billsRaw = await AuthService.getMBBillHdrList();
-        if (billsRaw is List && billsRaw.isNotEmpty) {
-          final billItems = FamilyTransactionItem.fromResponse(billsRaw);
-          int uCount = 0;
-          num uSum = 0;
-          int pCount = 0;
-          num pSum = 0;
-          for (final b in billItems) {
-            final amt = parseAmount(b.amount);
-            if (b.status.toLowerCase().contains('paid')) {
-              pCount++;
-              pSum += amt;
-            } else {
-              uCount++;
-              uSum += amt;
+      num getItemAmount(FamilyTransactionItem item) {
+        num val = parseAmount(item.amount);
+        if (val > 0) return val;
+        if (item.rawJson != null) {
+          for (final key in [
+            'dcAmount',
+            'fInc_dcAmount',
+            'fex_dcAmount',
+            'fEx_dcAmount',
+            'nAmount',
+            'iAmount',
+            'fInc_nAmount',
+            'fex_nAmount',
+            'fEx_nAmount',
+            'amount',
+            'totalAmount',
+            'amt',
+            'value',
+            'price',
+          ]) {
+            if (item.rawJson!.containsKey(key) && item.rawJson![key] != null) {
+              final parsed = num.tryParse(
+                item.rawJson![key].toString().replaceAll(RegExp(r'[^0-9.-]'), ''),
+              );
+              if (parsed != null && parsed > 0) return parsed;
             }
           }
-          if (uCount > 0 || pCount > 0) {
-            unpaidBillsCnt = uCount;
-            unpaidBillsSum = uSum;
-            paidBillsCnt = pCount;
-            paidBillsSum = pSum;
-          }
         }
-      } catch (_) {}
-
-      String mtdExp = summary.mtdExpense;
-      String mtdInc = summary.mtdIncome;
-      String projExp = summary.projectedExpenses;
-      String projInc = summary.projectedIncome;
-
-      if (incomeTotalSum > 0 || mtdInc == '₹0' || mtdInc == '₹0.00') {
-        mtdInc = formatVal(incomeTotalSum > 0 ? incomeTotalSum : parseAmount(mtdInc));
+        return 0;
       }
 
-      if (expenseTotalSum > 0 || mtdExp == '₹0' || mtdExp == '₹0.00') {
-        mtdExp = formatVal(expenseTotalSum > 0 ? expenseTotalSum : parseAmount(mtdExp));
+      num sumList(List<FamilyTransactionItem> list) =>
+          list.fold<num>(0, (prev, item) => prev + getItemAmount(item));
+
+      num paidExpSum = sumList(paidExpList);
+      num paidIncSum = sumList(paidIncList);
+      num unpaidExpSum = sumList(unpaidExpList);
+      num pendingIncSum = sumList(pendingIncList);
+      num unbilledSum = sumList(unbilledItemsList);
+
+      num totalExpSum = sumList(expenseItems);
+      num totalIncSum = sumList(incomeItems);
+
+      num summaryMtdExp = parseAmount(summary.mtdExpense);
+      num summaryMtdInc = parseAmount(summary.mtdIncome);
+      num summaryProjExp = parseAmount(summary.projectedExpenses);
+      num summaryProjInc = parseAmount(summary.projectedIncome);
+
+      num pickTotal(List<num> candidates) {
+        for (final c in candidates) {
+          if (c > 0) return c;
+        }
+        return 0;
       }
 
-      if (incomeTotalSum > 0 || projInc == '₹0' || projInc == '₹0.00') {
-        projInc = formatVal(incomeTotalSum > 0 ? incomeTotalSum : parseAmount(projInc));
-      }
+      num mtdExpNum = pickTotal([paidExpSum, summaryMtdExp, totalExpSum, unpaidExpSum]);
+      num mtdIncNum = pickTotal([paidIncSum, summaryMtdInc, totalIncSum, pendingIncSum]);
 
-      if (expenseTotalSum > 0 || projExp == '₹0' || projExp == '₹0.00') {
-        projExp = formatVal(expenseTotalSum > 0 ? expenseTotalSum : parseAmount(projExp));
-      }
+      num projExpNum = pickTotal([
+        paidExpSum + unpaidExpSum,
+        totalExpSum,
+        summaryProjExp,
+        paidExpSum,
+        unpaidExpSum,
+        summaryMtdExp,
+      ]);
 
-      final netVal = (incomeTotalSum > 0 ? incomeTotalSum : parseAmount(mtdInc)) -
-          (expenseTotalSum > 0 ? expenseTotalSum : parseAmount(mtdExp));
+      num projIncNum = pickTotal([
+        paidIncSum + pendingIncSum,
+        totalIncSum,
+        summaryProjInc,
+        paidIncSum,
+        pendingIncSum,
+        summaryMtdInc,
+      ]);
+
+      List<FamilyTransactionItem> upcomingExpItems =
+          summary.upcomingExpense.isNotEmpty ? summary.upcomingExpense : unpaidExpList;
+      List<FamilyTransactionItem> upcomingIncItems =
+          summary.upcomingIncome.isNotEmpty ? summary.upcomingIncome : pendingIncList;
+
+      num upcomingExpSum = sumList(upcomingExpItems);
+      num upcomingIncSum = sumList(upcomingIncItems);
 
       setState(() {
-        _mtdExpense = mtdExp;
-        _mtdIncome = mtdInc;
-        _projExpenses = projExp;
-        _projIncome = projInc;
-        _netBalance = formatVal(netVal);
+        _mtdExpense = formatVal(mtdExpNum);
+        _mtdIncome = formatVal(mtdIncNum);
+        _projExpenses = formatVal(projExpNum);
+        _projIncome = formatVal(projIncNum);
 
-        _unpaidExpCount = unpaidExpList.length;
-        _unpaidExpAmount = formatVal(unpaidExpSum);
+        _upcomingExpAmount = formatVal(upcomingExpSum);
+        _upcomingExpCount = upcomingExpItems.length;
 
-        _pendingIncCount = pendingIncList.length;
-        _pendingIncAmount = formatVal(pendingIncSum);
+        _upcomingIncAmount = formatVal(upcomingIncSum);
+        _upcomingIncCount = upcomingIncItems.length;
 
-        _unbilledExpCount = unbilledItemsList.length;
-        _unbilledExpAmount = formatVal(unbilledExpSum);
+        _unbilledAmount = formatVal(unbilledSum);
+        _unbilledCount = unbilledItemsList.length;
 
-        _paidExpCount = paidExpList.length;
-        _paidExpAmount = formatVal(paidExpSum);
-
-        _receivedIncCount = paidIncList.length;
-        _receivedIncAmount = formatVal(paidIncSum);
-
-        _unpaidBillsCount = unpaidBillsCnt;
-        _unpaidBillsAmount = formatVal(unpaidBillsSum);
-
-        _paidBillsCount = paidBillsCnt;
-        _paidBillsAmount = formatVal(paidBillsSum);
+        _unpaidRecAmount = formatVal(unpaidExpSum);
+        _unpaidRecCount = unpaidExpList.length;
 
         _hasLoadedHomeData = true;
         _isLoadingHomeData = false;
@@ -257,7 +242,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _isIOS ? const Color(0xFFF2F2F7) : const Color(0xFFFAFAFC),
+      backgroundColor: const Color(0xFFFAF9FC),
       body: SafeArea(
         child: ResponsiveCenter(
           maxWidth: 800,
@@ -265,355 +250,106 @@ class _HomeScreenState extends State<HomeScreen> {
             onRefresh: () => _loadHomeScreenData(showLoading: false),
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.only(bottom: 32.0),
+              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header
-                  Padding(
-                    padding: const EdgeInsets.all(24.0),
+                  // Top Soft Purple Header Card
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 20.0),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF3EDFA),
+                      borderRadius: BorderRadius.circular(28.0),
+                    ),
                     child: Row(
                       children: [
                         CircleAvatar(
-                          radius: 24,
-                          backgroundColor: const Color(0xFFDCD6F7),
+                          radius: 26,
+                          backgroundColor: const Color(0xFFE2C481),
                           child: Text(
-                            _userName.isNotEmpty
-                                ? _userName[0].toUpperCase()
-                                : 'U',
-                            style: TextStyle(
-                              color: Colors.brown.shade700,
+                            _userName.isNotEmpty ? _userName[0].toUpperCase() : 'R',
+                            style: const TextStyle(
+                              color: Colors.white,
                               fontWeight: FontWeight.bold,
-                              fontSize: 20,
+                              fontSize: 22,
                             ),
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 16),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Row(
-                                children: [
-                                  Flexible(
-                                    child: Text(
-                                      'Hello, ${_userName.isNotEmpty ? _userName : 'User'}',
-                                      style: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: Color(0xFF2D2E4D),
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
-                                      maxLines: 1,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      gradient: const LinearGradient(
-                                        colors: [
-                                          Color(0xFFFFD700),
-                                          Color(0xFFFFA500)
-                                        ],
-                                      ),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: const Text(
-                                      'PREMIUM',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                              Text(
+                                'Hello, ${_userName.isNotEmpty ? _userName : 'Rahul'}',
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF232038),
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
+                              const SizedBox(height: 2),
                               const Text(
                                 'Welcome back 👋',
-                                style:
-                                    TextStyle(color: Colors.grey, fontSize: 14),
+                                style: TextStyle(
+                                  color: Color(0xFF85809A),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ],
                           ),
                         ),
-                        Row(
-                          children: [
-                            IconButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const ApiTestScreen(),
-                                  ),
-                                );
-                              },
-                              icon: const Icon(Icons.api_outlined,
-                                  color: Colors.grey),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF5F5F5),
-                                borderRadius: BorderRadius.circular(12),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const ApiTestScreen(),
                               ),
-                              child: const Stack(
-                                children: [
-                                  Icon(Icons.notifications_outlined,
-                                      color: Colors.grey),
-                                  Positioned(
-                                    right: 2,
-                                    top: 2,
+                            );
+                          },
+                          child: Container(
+                            width: 46,
+                            height: 46,
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Color(0x0C000000),
+                                  blurRadius: 10,
+                                  offset: Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                const Icon(Icons.notifications_rounded, color: Color(0xFFF5B731), size: 24),
+                                if (_isLoadingHomeData)
+                                  const Positioned(
+                                    top: 10,
+                                    right: 12,
+                                    child: SizedBox(
+                                      width: 8,
+                                      height: 8,
+                                      child: CircularProgressIndicator(strokeWidth: 1.5, color: Color(0xFFE55B68)),
+                                    ),
+                                  )
+                                else
+                                  const Positioned(
+                                    top: 10,
+                                    right: 12,
                                     child: CircleAvatar(
                                       radius: 4,
-                                      backgroundColor: Colors.orange,
+                                      backgroundColor: Color(0xFFE55B68),
                                     ),
                                   ),
-                                ],
-                              ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Total Net Summary Banner
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                    child: Container(
-                      padding: const EdgeInsets.all(18),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF2D2E4D), Color(0xFF1E1F38)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF2D2E4D).withValues(alpha: 0.25),
-                            blurRadius: 14,
-                            offset: const Offset(0, 6),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text(
-                                'Total Net Balance',
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Row(
-                                  children: [
-                                    Icon(Icons.account_balance_wallet,
-                                        size: 14, color: Colors.amber),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      'TOTAL',
-                                      style: TextStyle(
-                                        color: Colors.amber,
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            _netBalance,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 26,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.arrow_upward,
-                                        size: 14, color: Colors.greenAccent),
-                                    const SizedBox(width: 4),
-                                    Flexible(
-                                      child: Text(
-                                        'Inc: $_projIncome',
-                                        style: const TextStyle(
-                                            color: Colors.white70,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Container(
-                                  width: 1, height: 16, color: Colors.white24),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.arrow_downward,
-                                        size: 14, color: Colors.redAccent),
-                                    const SizedBox(width: 4),
-                                    Flexible(
-                                      child: Text(
-                                        'Exp: $_projExpenses',
-                                        style: const TextStyle(
-                                            color: Colors.white70,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // Section Title
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 24.0),
-                    child: Text(
-                      'Projected Recurring',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF2D2E4D),
-                      ),
-                    ),
-                  ),
-                  if (_isLoadingHomeData)
-                    const Padding(
-                      padding: EdgeInsets.only(left: 24.0, top: 8.0),
-                      child: SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    ),
-                  const SizedBox(height: 16),
-
-                  // Grid Stats
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                    child: GridView.count(
-                      shrinkWrap: true,
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 14,
-                      mainAxisSpacing: 14,
-                      childAspectRatio: 1.45,
-                      physics: const NeverScrollableScrollPhysics(),
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const RecurringExpensesScreen(),
-                              ),
-                            );
-                          },
-                          child: _buildStatCard(
-                            title: 'MTD EXPENSE',
-                            value: _mtdExpense,
-                            badge: '↓ 4.2% vs last mo.',
-                            badgeColor: Colors.red,
-                            icon: Icons.trending_down_rounded,
-                            iconBgColor: const Color(0xFFFFEBEE),
-                            iconColor: const Color(0xFFE53935),
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const MtdIncomeScreen(),
-                              ),
-                            );
-                          },
-                          child: _buildStatCard(
-                            title: 'MTD INCOME',
-                            value: _mtdIncome,
-                            badge: '↑ 8.1% vs last mo.',
-                            badgeColor: Colors.green,
-                            icon: Icons.trending_up_rounded,
-                            iconBgColor: const Color(0xFFE8F5E9),
-                            iconColor: const Color(0xFF43A047),
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const RecurringExpensesScreen(),
-                              ),
-                            );
-                          },
-                          child: _buildStatCard(
-                            title: 'PROJ. EXPENSES',
-                            value: _projExpenses,
-                            badge: '',
-                            badgeColor: Colors.transparent,
-                            icon: Icons.receipt_long_outlined,
-                            iconBgColor: const Color(0xFFFFF3E0),
-                            iconColor: const Color(0xFFFB8C00),
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const RecurringIncomeScreen(),
-                              ),
-                            );
-                          },
-                          child: _buildStatCard(
-                            title: 'PROJ. INCOME',
-                            value: _projIncome,
-                            badge: '',
-                            badgeColor: Colors.transparent,
-                            icon: Icons.account_balance_wallet_outlined,
-                            iconBgColor: const Color(0xFFE0F7FA),
-                            iconColor: const Color(0xFF00ACC1),
                           ),
                         ),
                       ],
@@ -622,141 +358,177 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   const SizedBox(height: 24),
 
-                  // 7 Breakdown Option Cards
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 24.0),
-                    child: Text(
-                      'Detailed Option Summary',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF2D2E4D),
+                  // Grid 2x2 Stats
+                  GridView.count(
+                    shrinkWrap: true,
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                    childAspectRatio: 1.35,
+                    physics: const NeverScrollableScrollPhysics(),
+                    children: [
+                      GestureDetector(
+                        onTap: () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const RecurringExpensesScreen(),
+                            ),
+                          );
+                          _loadHomeScreenData(showLoading: false);
+                        },
+                        child: _buildTopStatCard(
+                          title: 'MTD EXPENSE',
+                          value: _mtdExpense,
+                          valueColor: const Color(0xFF262638),
+                        ),
                       ),
-                    ),
+                      GestureDetector(
+                        onTap: () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const MtdIncomeScreen(),
+                            ),
+                          );
+                          _loadHomeScreenData(showLoading: false);
+                        },
+                        child: _buildTopStatCard(
+                          title: 'MTD INCOME',
+                          value: _mtdIncome,
+                          valueColor: const Color(0xFF262638),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const RecurringExpensesScreen(),
+                            ),
+                          );
+                          _loadHomeScreenData(showLoading: false);
+                        },
+                        child: _buildTopStatCard(
+                          title: 'PROJ. EXPENSES',
+                          value: _projExpenses,
+                          valueColor: const Color(0xFF7A6830),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const RecurringIncomeScreen(),
+                            ),
+                          );
+                          _loadHomeScreenData(showLoading: false);
+                        },
+                        child: _buildTopStatCard(
+                          title: 'PROJ. INCOME',
+                          value: _projIncome,
+                          valueColor: const Color(0xFF7A6830),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 12),
 
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  const SizedBox(height: 24),
+
+                  // Bottom List Items Container
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20.0),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x06000000),
+                          blurRadius: 12,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
                     child: Column(
                       children: [
-                        _buildBreakdownOptionCard(
-                          title: 'Un Paid Recurring Expenses',
-                          count: _unpaidExpCount,
-                          amount: _unpaidExpAmount,
-                          icon: Icons.money_off_outlined,
-                          iconBgColor: const Color(0xFFFFEBEE),
-                          iconColor: const Color(0xFFD32F2F),
-                          onTap: () {
-                            Navigator.push(
+                        _buildListItem(
+                          icon: Icons.unarchive_rounded,
+                          iconBgColor: const Color(0xFFFDEEEF),
+                          iconColor: const Color(0xFFE55B68),
+                          title: 'Upcoming Expenses',
+                          subtitle: 'Next 7 days',
+                          amount: _upcomingExpAmount,
+                          badgeCount: _upcomingExpCount,
+                          onTap: () async {
+                            await Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (context) => const RecurringExpensesScreen(),
                               ),
                             );
+                            _loadHomeScreenData(showLoading: false);
                           },
                         ),
-                        _buildBreakdownOptionCard(
-                          title: 'Pending Recurring Income',
-                          count: _pendingIncCount,
-                          amount: _pendingIncAmount,
-                          icon: Icons.hourglass_top_rounded,
-                          iconBgColor: const Color(0xFFE8F5E9),
-                          iconColor: const Color(0xFF388E3C),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const RecurringIncomeScreen(),
-                              ),
-                            );
-                          },
-                        ),
-                        _buildBreakdownOptionCard(
-                          title: 'Un Billed Expenses',
-                          count: _unbilledExpCount,
-                          amount: _unbilledExpAmount,
-                          icon: Icons.receipt_long_outlined,
-                          iconBgColor: const Color(0xFFE3F2FD),
-                          iconColor: const Color(0xFF1976D2),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const UnbilledTransactionsScreen(),
-                              ),
-                            );
-                          },
-                        ),
-                        _buildBreakdownOptionCard(
-                          title: 'Cur. Month Paid Recurring Expenses',
-                          count: _paidExpCount,
-                          amount: _paidExpAmount,
-                          icon: Icons.check_circle_outline,
-                          iconBgColor: const Color(0xFFF3E5F5),
-                          iconColor: const Color(0xFF7B1FA2),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const RecurringExpensesScreen(),
-                              ),
-                            );
-                          },
-                        ),
-                        _buildBreakdownOptionCard(
-                          title: 'Cur. Month Received Recurring Income',
-                          count: _receivedIncCount,
-                          amount: _receivedIncAmount,
-                          icon: Icons.savings_outlined,
-                          iconBgColor: const Color(0xFFE0F2F1),
-                          iconColor: const Color(0xFF00796B),
-                          onTap: () {
-                            Navigator.push(
+                        const Divider(height: 1, color: Color(0xFFF2EEF7)),
+                        _buildListItem(
+                          icon: Icons.archive_rounded,
+                          iconBgColor: const Color(0xFFE8F6F0),
+                          iconColor: const Color(0xFF2E9A68),
+                          title: 'Upcoming Income',
+                          subtitle: 'Next 7 days',
+                          amount: _upcomingIncAmount,
+                          badgeCount: _upcomingIncCount,
+                          onTap: () async {
+                            await Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (context) => const MtdIncomeScreen(),
                               ),
                             );
+                            _loadHomeScreenData(showLoading: false);
                           },
                         ),
-                        _buildBreakdownOptionCard(
-                          title: 'Unpaid Bills',
-                          count: _unpaidBillsCount,
-                          amount: _unpaidBillsAmount,
-                          icon: Icons.receipt_outlined,
-                          iconBgColor: const Color(0xFFFFF3E0),
-                          iconColor: const Color(0xFFF57C00),
-                          onTap: () {
-                            Navigator.push(
+                        const Divider(height: 1, color: Color(0xFFF2EEF7)),
+                        _buildListItem(
+                          icon: Icons.receipt_long_rounded,
+                          iconBgColor: const Color(0xFFFBF4E6),
+                          iconColor: const Color(0xFFD4A038),
+                          title: 'Unbilled',
+                          subtitle: 'Awaiting invoice',
+                          amount: _unbilledAmount,
+                          badgeCount: _unbilledCount,
+                          onTap: () async {
+                            await Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (context) => const UnbilledTransactionsScreen(),
                               ),
                             );
+                            _loadHomeScreenData(showLoading: false);
                           },
                         ),
-                        _buildBreakdownOptionCard(
-                          title: 'Cur. Month Paid Bills',
-                          count: _paidBillsCount,
-                          amount: _paidBillsAmount,
-                          icon: Icons.verified_outlined,
-                          iconBgColor: const Color(0xFFE0F7FA),
-                          iconColor: const Color(0xFF0097A7),
-                          onTap: () {
-                            Navigator.push(
+                        const Divider(height: 1, color: Color(0xFFF2EEF7)),
+                        _buildListItem(
+                          icon: Icons.hourglass_bottom_rounded,
+                          iconBgColor: const Color(0xFFFDECEF),
+                          iconColor: const Color(0xFFE55B68),
+                          title: 'Unpaid Recurring',
+                          subtitle: 'Action needed',
+                          amount: _unpaidRecAmount,
+                          badgeCount: _unpaidRecCount,
+                          onTap: () async {
+                            await Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => const UnbilledTransactionsScreen(),
+                                builder: (context) => const RecurringExpensesScreen(),
                               ),
                             );
+                            _loadHomeScreenData(showLoading: false);
                           },
                         ),
                       ],
                     ),
                   ),
-
-
                 ],
               ),
             ),
@@ -766,84 +538,47 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildStatCard({
+  Widget _buildTopStatCard({
     required String title,
     required String value,
-    required String badge,
-    required Color badgeColor,
-    required IconData icon,
-    required Color iconBgColor,
-    required Color iconColor,
+    required Color valueColor,
   }) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFF0F0F3)),
-        boxShadow: [
+        borderRadius: BorderRadius.circular(20.0),
+        boxShadow: const [
           BoxShadow(
-            color: const Color(0xFF2D2E4D).withValues(alpha: 0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: Color(0x06000000),
+            blurRadius: 10,
+            offset: Offset(0, 4),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: iconBgColor,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: iconColor, size: 18),
-              ),
-              if (badge.isNotEmpty)
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: badgeColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    badge,
-                    style: TextStyle(
-                      color: badgeColor,
-                      fontSize: 9,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 8),
           Text(
             title,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey.shade600,
-              letterSpacing: 0.4,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF868297),
+              letterSpacing: 0.5,
             ),
-            overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: 10),
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
             child: Text(
               value,
-              style: const TextStyle(
-                fontSize: 21,
+              style: TextStyle(
+                fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF2D2E4D),
+                color: valueColor,
               ),
             ),
           ),
@@ -852,45 +587,33 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-
-
-  Widget _buildBreakdownOptionCard({
-    required String title,
-    required int count,
-    required String amount,
+  Widget _buildListItem({
     required IconData icon,
     required Color iconBgColor,
     required Color iconColor,
-    VoidCallback? onTap,
+    required String title,
+    required String subtitle,
+    required String amount,
+    required int badgeCount,
+    required VoidCallback onTap,
   }) {
-    return GestureDetector(
+    return InkWell(
       onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFF2F2F5)),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF2D2E4D).withValues(alpha: 0.03),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
+      borderRadius: BorderRadius.circular(20.0),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(10),
+              width: 46,
+              height: 46,
               decoration: BoxDecoration(
                 color: iconBgColor,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14.0),
               ),
-              child: Icon(icon, color: iconColor, size: 20),
+              child: Icon(icon, color: iconColor, size: 22),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -898,37 +621,53 @@ class _HomeScreenState extends State<HomeScreen> {
                   Text(
                     title,
                     style: const TextStyle(
+                      fontSize: 15,
                       fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                      color: Color(0xFF2D2E4D),
+                      color: Color(0xFF232038),
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '$count items',
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontSize: 11,
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF8D88A2),
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],
               ),
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: iconBgColor,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                amount,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                  color: iconColor,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  amount,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF232038),
+                  ),
                 ),
-              ),
+                const SizedBox(height: 4),
+                Container(
+                  width: 22,
+                  height: 22,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF332D56),
+                    shape: BoxShape.circle,
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    '$badgeCount',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
