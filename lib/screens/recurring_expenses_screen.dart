@@ -18,7 +18,8 @@ class RecurringExpensesScreen extends StatefulWidget {
   });
 
   @override
-  State<RecurringExpensesScreen> createState() => _RecurringExpensesScreenState();
+  State<RecurringExpensesScreen> createState() =>
+      _RecurringExpensesScreenState();
 }
 
 class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
@@ -27,6 +28,19 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
   String? _loadError;
   DateTime? _fromDate;
   DateTime? _toDate;
+  String _totalAmount = '₹0';
+  String _projectedAmount = '₹0';
+
+  String _totalAmountFromItems(List<FamilyTransactionItem> items) {
+    final total = items.fold<num>(0, (sum, item) {
+      final amount = num.tryParse(
+            item.amount.replaceAll(RegExp(r'[^0-9.-]'), ''),
+          ) ??
+          0;
+      return sum + amount;
+    });
+    return '₹${total.toStringAsFixed(total.truncateToDouble() == total ? 0 : 2)}';
+  }
 
   @override
   void initState() {
@@ -70,12 +84,14 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
       if (itemDt == null) return true;
 
       if (_fromDate != null) {
-        final start = DateTime(_fromDate!.year, _fromDate!.month, _fromDate!.day);
+        final start =
+            DateTime(_fromDate!.year, _fromDate!.month, _fromDate!.day);
         if (itemDt.isBefore(start)) return false;
       }
 
       if (_toDate != null) {
-        final end = DateTime(_toDate!.year, _toDate!.month, _toDate!.day, 23, 59, 59);
+        final end =
+            DateTime(_toDate!.year, _toDate!.month, _toDate!.day, 23, 59, 59);
         if (itemDt.isAfter(end)) return false;
       }
 
@@ -120,16 +136,26 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
     }
     try {
       final familyId = await AuthService.getFamilyId();
-      final items = await AuthService.getExpenseMasterGrid(familyId: familyId, startRow: 0);
+      final items = await AuthService.getExpenseMasterGrid(
+          familyId: familyId, startRow: 0);
+      final summary = await AuthService.getHomeScreenData(familyId: familyId);
+      final totalAmount = _totalAmountFromItems(items);
+
+      await AuthService.saveRecurringExpense(totalAmount);
+      await AuthService.saveProjectedExpense(summary.projectedExpenses);
+
       if (mounted) {
         setState(() {
           _items = items;
+          _totalAmount = totalAmount;
+          _projectedAmount = summary.projectedExpenses;
           _loadError = null;
         });
       }
     } catch (error) {
       if (mounted && _items.isEmpty) {
-        setState(() => _loadError = error.toString().replaceFirst('Exception: ', ''));
+        setState(() =>
+            _loadError = error.toString().replaceFirst('Exception: ', ''));
       }
     } finally {
       if (mounted) {
@@ -208,14 +234,16 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
                             ),
                             Text(
                               '${filtered.length} of ${_items.length}',
-                              style: const TextStyle(color: Colors.grey, fontSize: 14),
+                              style: const TextStyle(
+                                  color: Colors.grey, fontSize: 14),
                             ),
                           ],
                         ),
                         const SizedBox(height: 12),
                         // Date Filter Bar
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
                           decoration: BoxDecoration(
                             color: const Color(0xFFF8F9FB),
                             borderRadius: BorderRadius.circular(14),
@@ -227,25 +255,35 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
                                 child: GestureDetector(
                                   onTap: () => _selectFromDate(context),
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 6),
                                     decoration: BoxDecoration(
                                       color: Colors.white,
                                       borderRadius: BorderRadius.circular(8),
                                       border: Border.all(
-                                        color: _fromDate != null ? const Color(0xFF2D2E4D) : const Color(0xFFD1D5DB),
+                                        color: _fromDate != null
+                                            ? const Color(0xFF2D2E4D)
+                                            : const Color(0xFFD1D5DB),
                                       ),
                                     ),
                                     child: Row(
                                       children: [
-                                        const Icon(Icons.calendar_today, size: 14, color: Colors.grey),
+                                        const Icon(Icons.calendar_today,
+                                            size: 14, color: Colors.grey),
                                         const SizedBox(width: 4),
                                         Expanded(
                                           child: Text(
-                                            _fromDate != null ? formatDate(_fromDate) : 'From Date',
+                                            _fromDate != null
+                                                ? formatDate(_fromDate)
+                                                : 'From Date',
                                             style: TextStyle(
                                               fontSize: 11,
-                                              fontWeight: _fromDate != null ? FontWeight.bold : FontWeight.normal,
-                                              color: _fromDate != null ? const Color(0xFF2D2E4D) : Colors.grey,
+                                              fontWeight: _fromDate != null
+                                                  ? FontWeight.bold
+                                                  : FontWeight.normal,
+                                              color: _fromDate != null
+                                                  ? const Color(0xFF2D2E4D)
+                                                  : Colors.grey,
                                             ),
                                             overflow: TextOverflow.ellipsis,
                                           ),
@@ -260,25 +298,35 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
                                 child: GestureDetector(
                                   onTap: () => _selectToDate(context),
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 6),
                                     decoration: BoxDecoration(
                                       color: Colors.white,
                                       borderRadius: BorderRadius.circular(8),
                                       border: Border.all(
-                                        color: _toDate != null ? const Color(0xFF2D2E4D) : const Color(0xFFD1D5DB),
+                                        color: _toDate != null
+                                            ? const Color(0xFF2D2E4D)
+                                            : const Color(0xFFD1D5DB),
                                       ),
                                     ),
                                     child: Row(
                                       children: [
-                                        const Icon(Icons.calendar_today, size: 14, color: Colors.grey),
+                                        const Icon(Icons.calendar_today,
+                                            size: 14, color: Colors.grey),
                                         const SizedBox(width: 4),
                                         Expanded(
                                           child: Text(
-                                            _toDate != null ? formatDate(_toDate) : 'To Date',
+                                            _toDate != null
+                                                ? formatDate(_toDate)
+                                                : 'To Date',
                                             style: TextStyle(
                                               fontSize: 11,
-                                              fontWeight: _toDate != null ? FontWeight.bold : FontWeight.normal,
-                                              color: _toDate != null ? const Color(0xFF2D2E4D) : Colors.grey,
+                                              fontWeight: _toDate != null
+                                                  ? FontWeight.bold
+                                                  : FontWeight.normal,
+                                              color: _toDate != null
+                                                  ? const Color(0xFF2D2E4D)
+                                                  : Colors.grey,
                                             ),
                                             overflow: TextOverflow.ellipsis,
                                           ),
@@ -291,7 +339,8 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
                               if (_fromDate != null || _toDate != null) ...[
                                 const SizedBox(width: 6),
                                 IconButton(
-                                  icon: const Icon(Icons.close, size: 18, color: Colors.red),
+                                  icon: const Icon(Icons.close,
+                                      size: 18, color: Colors.red),
                                   padding: EdgeInsets.zero,
                                   constraints: const BoxConstraints(),
                                   onPressed: () {
@@ -304,6 +353,79 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
                               ],
                             ],
                           ),
+                        ),
+                        const SizedBox(height: 16),
+                        // Summary Cards
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFDEEEF),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                      color: const Color(0xFFF9D5D8)),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'FIXED TOTAL',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFFE55B68),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      _totalAmount,
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFFE55B68),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF0F4FF),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                      color: const Color(0xFFD1E0FF)),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'PROJECTED EXP.',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF3B5BDB),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      _projectedAmount,
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF3B5BDB),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -381,53 +503,61 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
                                       ),
                                     )
                                   : _loadError != null
-                                  ? ListView(
-                                      physics: const AlwaysScrollableScrollPhysics(),
-                                      children: [
-                                        Padding(
-                                          padding: const EdgeInsets.all(24),
-                                          child: Column(
-                                            children: [
-                                              Text(
-                                                _loadError!,
-                                                textAlign: TextAlign.center,
-                                                style: const TextStyle(color: Colors.red),
+                                      ? ListView(
+                                          physics:
+                                              const AlwaysScrollableScrollPhysics(),
+                                          children: [
+                                            Padding(
+                                              padding: const EdgeInsets.all(24),
+                                              child: Column(
+                                                children: [
+                                                  Text(
+                                                    _loadError!,
+                                                    textAlign: TextAlign.center,
+                                                    style: const TextStyle(
+                                                        color: Colors.red),
+                                                  ),
+                                                  const SizedBox(height: 12),
+                                                  OutlinedButton.icon(
+                                                    onPressed: _loadData,
+                                                    icon: const Icon(
+                                                        Icons.refresh),
+                                                    label: const Text('Retry'),
+                                                  ),
+                                                ],
                                               ),
-                                              const SizedBox(height: 12),
-                                              OutlinedButton.icon(
-                                                onPressed: _loadData,
-                                                icon: const Icon(Icons.refresh),
-                                                label: const Text('Retry'),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    )
-                                  : filtered.isEmpty
-                                  ? ListView(
-                                      physics: const AlwaysScrollableScrollPhysics(),
-                                      children: const [
-                                        Padding(
-                                          padding: EdgeInsets.all(32),
-                                          child: Center(
-                                            child: Text(
-                                              'No recurring expenses found for selected dates',
-                                              style: TextStyle(color: Colors.grey),
                                             ),
-                                          ),
-                                        ),
-                                      ],
-                                    )
-                                  : ListView.separated(
-                                      physics: const AlwaysScrollableScrollPhysics(),
-                                      itemCount: filtered.length,
-                                      separatorBuilder: (context, index) => const Divider(height: 1),
-                                      itemBuilder: (context, index) {
-                                        final item = filtered[index];
-                                        return _build3ColumnRow(item);
-                                      },
-                                    ),
+                                          ],
+                                        )
+                                      : filtered.isEmpty
+                                          ? ListView(
+                                              physics:
+                                                  const AlwaysScrollableScrollPhysics(),
+                                              children: const [
+                                                Padding(
+                                                  padding: EdgeInsets.all(32),
+                                                  child: Center(
+                                                    child: Text(
+                                                      'No recurring expenses found for selected dates',
+                                                      style: TextStyle(
+                                                          color: Colors.grey),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            )
+                                          : ListView.separated(
+                                              physics:
+                                                  const AlwaysScrollableScrollPhysics(),
+                                              itemCount: filtered.length,
+                                              separatorBuilder:
+                                                  (context, index) =>
+                                                      const Divider(height: 1),
+                                              itemBuilder: (context, index) {
+                                                final item = filtered[index];
+                                                return _build3ColumnRow(item);
+                                              },
+                                            ),
                             ),
                           ],
                         ),
@@ -467,7 +597,8 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
 
   Widget _build3ColumnRow(FamilyTransactionItem item) {
     final statusText = item.status.isEmpty ? 'Pending' : item.status;
-    final isActive = statusText.toUpperCase().startsWith('A') || statusText.toLowerCase() == 'active';
+    final isActive = statusText.toUpperCase().startsWith('A') ||
+        statusText.toLowerCase() == 'active';
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
@@ -569,9 +700,11 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
           value: 'view',
           child: Row(
             children: [
-              Icon(Icons.visibility_outlined, size: 18, color: Color(0xFF2D2E4D)),
+              Icon(Icons.visibility_outlined,
+                  size: 18, color: Color(0xFF2D2E4D)),
               SizedBox(width: 10),
-              Text('View', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+              Text('View',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
             ],
           ),
         ),
@@ -581,7 +714,8 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
             children: [
               Icon(Icons.edit_outlined, size: 18, color: Color(0xFF2D2E4D)),
               SizedBox(width: 10),
-              Text('Edit', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+              Text('Edit',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
             ],
           ),
         ),
@@ -589,9 +723,11 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
           value: 'close',
           child: Row(
             children: [
-              Icon(Icons.highlight_off_outlined, size: 18, color: Color(0xFF2D2E4D)),
+              Icon(Icons.highlight_off_outlined,
+                  size: 18, color: Color(0xFF2D2E4D)),
               SizedBox(width: 10),
-              Text('Mark as Closed', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+              Text('Mark as Closed',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
             ],
           ),
         ),
@@ -601,7 +737,8 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
             children: [
               Icon(Icons.history, size: 18, color: Color(0xFF2D2E4D)),
               SizedBox(width: 10),
-              Text('History', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+              Text('History',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
             ],
           ),
         ),
@@ -609,9 +746,11 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
           value: 'transaction',
           child: Row(
             children: [
-              Icon(Icons.account_balance_outlined, size: 18, color: Color(0xFF2D2E4D)),
+              Icon(Icons.account_balance_outlined,
+                  size: 18, color: Color(0xFF2D2E4D)),
               SizedBox(width: 10),
-              Text('Transaction', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+              Text('Transaction',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
             ],
           ),
         ),
@@ -621,7 +760,8 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
             children: [
               Icon(Icons.person_outline, size: 18, color: Color(0xFF2D2E4D)),
               SizedBox(width: 10),
-              Text('Party Details', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+              Text('Party Details',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
             ],
           ),
         ),
@@ -663,7 +803,8 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
   }
 
   Future<void> _toggleStatus(FamilyTransactionItem item) async {
-    final isCurrentlyActive = item.status.toUpperCase().startsWith('A') || item.status.toLowerCase() == 'active';
+    final isCurrentlyActive = item.status.toUpperCase().startsWith('A') ||
+        item.status.toLowerCase() == 'active';
     final newStatus = isCurrentlyActive ? 'D' : 'A';
     final actionLabel = newStatus == 'D' ? 'Mark as Closed' : 'Activate';
 
@@ -671,7 +812,8 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text('$actionLabel Expense'),
-        content: Text('Are you sure you want to ${actionLabel.toLowerCase()} "${item.name}"?'),
+        content: Text(
+            'Are you sure you want to ${actionLabel.toLowerCase()} "${item.name}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -679,8 +821,10 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2D2E4D)),
-            child: Text(actionLabel, style: const TextStyle(color: Colors.white)),
+            style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF2D2E4D)),
+            child:
+                Text(actionLabel, style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -696,7 +840,8 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
           expenseType: item.type.isNotEmpty ? item.type : 'E',
           cycleMonths: 1,
           startDate: item.startDate,
-          amount: int.tryParse(item.amount.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0,
+          amount:
+              int.tryParse(item.amount.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0,
           nextDueDate: item.endDate,
           status: newStatus,
         );
@@ -706,7 +851,9 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
         }
       } catch (e) {
         if (mounted) {
-          UIUtils.showTopMessage(context, e.toString().replaceFirst('Exception: ', ''), isError: true);
+          UIUtils.showTopMessage(
+              context, e.toString().replaceFirst('Exception: ', ''),
+              isError: true);
         }
       }
     }
@@ -732,7 +879,10 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
                 Expanded(
                   child: Text(
                     'History - ${item.name}',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF2D2E4D)),
+                    style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF2D2E4D)),
                   ),
                 ),
               ],
@@ -740,9 +890,11 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
             const Divider(height: 24),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.check_circle_outline, color: Colors.green),
+              leading:
+                  const Icon(Icons.check_circle_outline, color: Colors.green),
               title: Text('Amount: ${item.amount}'),
-              subtitle: Text('Date: ${item.date.isNotEmpty ? item.date : "N/A"} • Status: ${item.status.isNotEmpty ? item.status : "Active"}'),
+              subtitle: Text(
+                  'Date: ${item.date.isNotEmpty ? item.date : "N/A"} • Status: ${item.status.isNotEmpty ? item.status : "Active"}'),
             ),
             const SizedBox(height: 12),
           ],
@@ -778,7 +930,10 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
                 Expanded(
                   child: Text(
                     'Party Details',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF2D2E4D)),
+                    style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF2D2E4D)),
                   ),
                 ),
               ],
@@ -786,10 +941,13 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
             const Divider(height: 24),
             _buildPartyRow('Expense Name', item.name),
             _buildPartyRow('Amount / Balance', item.amount),
-            _buildPartyRow('Status', item.status.isNotEmpty ? item.status : 'Active'),
+            _buildPartyRow(
+                'Status', item.status.isNotEmpty ? item.status : 'Active'),
             if (item.type.isNotEmpty) _buildPartyRow('Type', item.type),
-            if (item.startDate.isNotEmpty) _buildPartyRow('Start Date', item.startDate),
-            if (item.endDate.isNotEmpty) _buildPartyRow('End Date', item.endDate),
+            if (item.startDate.isNotEmpty)
+              _buildPartyRow('Start Date', item.startDate),
+            if (item.endDate.isNotEmpty)
+              _buildPartyRow('End Date', item.endDate),
             const SizedBox(height: 12),
           ],
         ),
@@ -804,7 +962,11 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: const TextStyle(color: Colors.grey, fontSize: 14)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF2D2E4D))),
+          Text(value,
+              style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: Color(0xFF2D2E4D))),
         ],
       ),
     );

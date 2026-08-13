@@ -4,6 +4,7 @@ import '../models/api_models.dart';
 import '../services/auth_service.dart';
 import '../widgets/responsive_center.dart';
 import 'api_test_screen.dart';
+import 'expense_list_screen.dart';
 import 'mtd_income_screen.dart';
 import 'recurring_expenses_screen.dart';
 import 'recurring_income_screen.dart';
@@ -23,6 +24,10 @@ class _HomeScreenState extends State<HomeScreen> {
   String _projExpenses = '₹0';
   String _projIncome = '₹0';
 
+  String _recurringExpense = '₹0';
+  String _recurringIncome = '₹0';
+  String _totalRecurringAmount = '₹0';
+
   String _upcomingExpAmount = '₹0';
   int _upcomingExpCount = 0;
 
@@ -40,6 +45,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
   bool _hasLoadedHomeData = false;
   bool _isLoadingHomeData = false;
+
+  num _parseAmount(String value) {
+    return num.tryParse(value.replaceAll(RegExp(r'[^0-9.-]'), '')) ?? 0;
+  }
+
+  String _formatAmount(num value) {
+    return '₹${value.toStringAsFixed(value.truncateToDouble() == value ? 0 : 2)}';
+  }
+
+  String _sumAmounts(String first, String second) {
+    return _formatAmount(_parseAmount(first) + _parseAmount(second));
+  }
 
   @override
   void initState() {
@@ -70,184 +87,38 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final familyId = await AuthService.getFamilyId();
       final summary = await AuthService.getHomeScreenData(familyId: familyId);
-
-      List<FamilyTransactionItem> incomeItems = await AuthService.getAllIncome(familyId: familyId);
-      if (incomeItems.isEmpty) {
-        incomeItems = summary.upcomingIncome;
-        if (incomeItems.isEmpty) {
-          incomeItems = await AuthService.getIncomeTransactions(familyId: familyId);
-        }
-      }
-
-      List<FamilyTransactionItem> expenseItems = await AuthService.getExpenseMasterGrid(familyId: familyId, startRow: 0);
-      if (expenseItems.isEmpty) {
-        expenseItems = summary.upcomingExpense;
-        if (expenseItems.isEmpty) {
-          expenseItems = await AuthService.getExpenseTransactions(familyId: familyId);
-        }
-      }
-
-      List<FamilyTransactionItem> unbilledItemsList = summary.unbilledItems;
-      if (unbilledItemsList.isEmpty) {
-        unbilledItemsList = await AuthService.getUnbilledTransactions(familyId: familyId);
-      }
-
-      List<FamilyTransactionItem> unpaidExpList = [];
-      try {
-        final res = await AuthService.getFamilyUnpaidExpense(familyId: familyId);
-        unpaidExpList = FamilyTransactionItem.fromResponse(res);
-      } catch (_) {}
-
-      List<FamilyTransactionItem> pendingIncList = [];
-      try {
-        final res = await AuthService.getFamilyUnpaidIncome(familyId: familyId);
-        pendingIncList = FamilyTransactionItem.fromResponse(res);
-      } catch (_) {}
-
-      List<FamilyTransactionItem> paidExpList = [];
-      try {
-        final res = await AuthService.getFamilyPaidExpense(familyId: familyId);
-        paidExpList = FamilyTransactionItem.fromResponse(res);
-      } catch (_) {}
-
-      List<FamilyTransactionItem> paidIncList = [];
-      try {
-        final res = await AuthService.getFamilyPaidIncome(familyId: familyId);
-        paidIncList = FamilyTransactionItem.fromResponse(res);
-      } catch (_) {}
+      final recurringExpense = await AuthService.getRecurringExpense();
+      final recurringIncome = await AuthService.getRecurringIncome();
+      final projectedExpense = await AuthService.getProjectedExpense();
+      final projectedIncome = await AuthService.getProjectedIncome();
 
       if (!mounted) return;
 
-      num parseAmount(String str) {
-        final cleaned = str.replaceAll(RegExp(r'[^0-9.-]'), '');
-        return num.tryParse(cleaned) ?? 0;
-      }
-
-      String formatVal(num val) {
-        return '₹${val.toStringAsFixed(val.truncateToDouble() == val ? 0 : 2)}';
-      }
-
-      num getItemAmount(FamilyTransactionItem item) {
-        num val = parseAmount(item.amount);
-        if (val > 0) return val;
-        if (item.rawJson != null) {
-          for (final key in [
-            'dcAmount',
-            'fInc_dcAmount',
-            'fex_dcAmount',
-            'fEx_dcAmount',
-            'nAmount',
-            'iAmount',
-            'fInc_nAmount',
-            'fex_nAmount',
-            'fEx_nAmount',
-            'amount',
-            'totalAmount',
-            'amt',
-            'value',
-            'price',
-          ]) {
-            if (item.rawJson!.containsKey(key) && item.rawJson![key] != null) {
-              final parsed = num.tryParse(
-                item.rawJson![key].toString().replaceAll(RegExp(r'[^0-9.-]'), ''),
-              );
-              if (parsed != null && parsed > 0) return parsed;
-            }
-          }
-        }
-        return 0;
-      }
-
-      num sumList(List<FamilyTransactionItem> list) =>
-          list.fold<num>(0, (prev, item) => prev + getItemAmount(item));
-
-      num paidExpSum = sumList(paidExpList);
-      num paidIncSum = sumList(paidIncList);
-      num unpaidExpSum = sumList(unpaidExpList);
-      num pendingIncSum = sumList(pendingIncList);
-      num unbilledSum = sumList(unbilledItemsList);
-
-      num totalExpSum = sumList(expenseItems);
-      num totalIncSum = sumList(incomeItems);
-
-      num summaryMtdExp = parseAmount(summary.mtdExpense);
-      num summaryMtdInc = parseAmount(summary.mtdIncome);
-      num summaryProjExp = parseAmount(summary.projectedExpenses);
-      num summaryProjInc = parseAmount(summary.projectedIncome);
-
-      num pickTotal(List<num> candidates) {
-        for (final c in candidates) {
-          if (c > 0) return c;
-        }
-        return 0;
-      }
-
-      num mtdExpNum = pickTotal([paidExpSum, summaryMtdExp, totalExpSum, unpaidExpSum]);
-      num mtdIncNum = pickTotal([paidIncSum, summaryMtdInc, totalIncSum, pendingIncSum]);
-
-      num projExpNum = pickTotal([
-        paidExpSum + unpaidExpSum,
-        totalExpSum,
-        summaryProjExp,
-        paidExpSum,
-        unpaidExpSum,
-        summaryMtdExp,
-      ]);
-
-      num projIncNum = pickTotal([
-        paidIncSum + pendingIncSum,
-        totalIncSum,
-        summaryProjInc,
-        paidIncSum,
-        pendingIncSum,
-        summaryMtdInc,
-      ]);
-
-      List<FamilyTransactionItem> upcomingExpItems =
-          summary.upcomingExpense.isNotEmpty ? summary.upcomingExpense : unpaidExpList;
-      List<FamilyTransactionItem> upcomingIncItems =
-          summary.upcomingIncome.isNotEmpty ? summary.upcomingIncome : pendingIncList;
-
-      num upcomingExpSum = sumList(upcomingExpItems);
-      num upcomingIncSum = sumList(upcomingIncItems);
-
-      // Consolidate Expense List for Home Screen display
-      List<FamilyTransactionItem> combinedExpList = [];
-      combinedExpList.addAll(expenseItems);
-      for (final item in unpaidExpList) {
-        if (!combinedExpList.any((e) => e.name == item.name && e.amount == item.amount)) {
-          combinedExpList.add(item);
-        }
-      }
-      for (final item in paidExpList) {
-        if (!combinedExpList.any((e) => e.name == item.name && e.amount == item.amount)) {
-          combinedExpList.add(item);
-        }
-      }
-
-      num combinedExpSum = sumList(combinedExpList);
-      num expTotalSumFinal = combinedExpSum > 0 ? combinedExpSum : projExpNum;
-
       setState(() {
-        _mtdExpense = formatVal(mtdExpNum);
-        _mtdIncome = formatVal(mtdIncNum);
-        _projExpenses = formatVal(projExpNum);
-        _projIncome = formatVal(projIncNum);
+        // Display API values directly
+        _mtdExpense = _sumAmounts(summary.mtdExpense, recurringExpense);
+        _mtdIncome = _sumAmounts(summary.mtdIncome, recurringIncome);
+        _projExpenses = _sumAmounts(projectedExpense, recurringExpense);
+        _projIncome = _sumAmounts(projectedIncome, recurringIncome);
 
-        _upcomingExpAmount = formatVal(upcomingExpSum);
-        _upcomingExpCount = upcomingExpItems.length;
+        _recurringExpense = recurringExpense;
+        _recurringIncome = recurringIncome;
+        _totalRecurringAmount = summary.totalRecurringAmount;
 
-        _upcomingIncAmount = formatVal(upcomingIncSum);
-        _upcomingIncCount = upcomingIncItems.length;
+        _upcomingExpAmount = summary.upcomingExpenseAmount;
+        _upcomingExpCount = summary.upcomingExpense.length;
 
-        _unbilledAmount = formatVal(unbilledSum);
-        _unbilledCount = unbilledItemsList.length;
+        _upcomingIncAmount = summary.upcomingIncomeAmount;
+        _upcomingIncCount = summary.upcomingIncome.length;
 
-        _unpaidRecAmount = formatVal(unpaidExpSum);
-        _unpaidRecCount = unpaidExpList.length;
+        _unbilledAmount = summary.unbilledAmount;
+        _unbilledCount = summary.unbilledItems.length;
 
-        _recentExpensesList = combinedExpList;
-        _totalExpenseListAmount = formatVal(expTotalSumFinal);
+        _unpaidRecAmount = recurringExpense;
+        _unpaidRecCount = 0;
+
+        _recentExpensesList = summary.expenses;
+        _totalExpenseListAmount = summary.totalExpenseAmount;
 
         _hasLoadedHomeData = true;
         _isLoadingHomeData = false;
@@ -273,14 +144,16 @@ class _HomeScreenState extends State<HomeScreen> {
             onRefresh: () => _loadHomeScreenData(showLoading: false),
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Top Soft Purple Header Card
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 20.0),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20.0, vertical: 20.0),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF3EDFA),
                       borderRadius: BorderRadius.circular(28.0),
@@ -291,7 +164,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           radius: 26,
                           backgroundColor: const Color(0xFFE2C481),
                           child: Text(
-                            _userName.isNotEmpty ? _userName[0].toUpperCase() : 'R',
+                            _userName.isNotEmpty
+                                ? _userName[0].toUpperCase()
+                                : 'R',
                             style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
@@ -351,7 +226,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: Stack(
                               alignment: Alignment.center,
                               children: [
-                                const Icon(Icons.notifications_rounded, color: Color(0xFFF5B731), size: 24),
+                                const Icon(Icons.notifications_rounded,
+                                    color: Color(0xFFF5B731), size: 24),
                                 if (_isLoadingHomeData)
                                   const Positioned(
                                     top: 10,
@@ -359,7 +235,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                     child: SizedBox(
                                       width: 8,
                                       height: 8,
-                                      child: CircularProgressIndicator(strokeWidth: 1.5, color: Color(0xFFE55B68)),
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 1.5,
+                                          color: Color(0xFFE55B68)),
                                     ),
                                   )
                                 else
@@ -395,7 +273,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           await Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const RecurringExpensesScreen(),
+                              builder: (context) =>
+                                  const RecurringExpensesScreen(),
                             ),
                           );
                           _loadHomeScreenData(showLoading: false);
@@ -427,7 +306,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           await Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const RecurringExpensesScreen(),
+                              builder: (context) =>
+                                  const RecurringExpensesScreen(),
                             ),
                           );
                           _loadHomeScreenData(showLoading: false);
@@ -443,7 +323,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           await Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const RecurringIncomeScreen(),
+                              builder: (context) =>
+                                  const RecurringIncomeScreen(),
                             ),
                           );
                           _loadHomeScreenData(showLoading: false);
@@ -486,7 +367,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             await Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => const RecurringExpensesScreen(),
+                                builder: (context) =>
+                                    const RecurringExpensesScreen(),
                               ),
                             );
                             _loadHomeScreenData(showLoading: false);
@@ -524,7 +406,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             await Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => const UnbilledTransactionsScreen(),
+                                builder: (context) =>
+                                    const UnbilledTransactionsScreen(),
                               ),
                             );
                             _loadHomeScreenData(showLoading: false);
@@ -543,11 +426,128 @@ class _HomeScreenState extends State<HomeScreen> {
                             await Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => const RecurringExpensesScreen(),
+                                builder: (context) =>
+                                    const RecurringExpensesScreen(),
                               ),
                             );
                             _loadHomeScreenData(showLoading: false);
                           },
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Recurring Amounts Section
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20.0),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x06000000),
+                          blurRadius: 12,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        // Recurring Expense Row
+                        ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                          leading: Container(
+                            width: 42,
+                            height: 42,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFDEEEF),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(Icons.trending_down_rounded,
+                                color: Color(0xFFE55B68), size: 20),
+                          ),
+                          title: const Text(
+                            'Recurring Expenses',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: Color(0xFF232038),
+                            ),
+                          ),
+                          trailing: Text(
+                            _recurringExpense,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                              color: Color(0xFFE55B68),
+                            ),
+                          ),
+                        ),
+                        const Divider(height: 1, color: Color(0xFFF2EEF7)),
+                        // Recurring Income Row
+                        ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                          leading: Container(
+                            width: 42,
+                            height: 42,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE8F6F0),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(Icons.trending_up_rounded,
+                                color: Color(0xFF2E9A68), size: 20),
+                          ),
+                          title: const Text(
+                            'Recurring Income',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: Color(0xFF232038),
+                            ),
+                          ),
+                          trailing: Text(
+                            _recurringIncome,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                              color: Color(0xFF2E9A68),
+                            ),
+                          ),
+                        ),
+                        const Divider(height: 1, color: Color(0xFFF2EEF7)),
+                        // Total Recurring Row
+                        ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                          leading: Container(
+                            width: 42,
+                            height: 42,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFBF4E6),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(Icons.calculate_rounded,
+                                color: Color(0xFFD4A038), size: 20),
+                          ),
+                          title: const Text(
+                            'Total Recurring',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: Color(0xFF232038),
+                            ),
+                          ),
+                          trailing: Text(
+                            _totalRecurringAmount,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                              color: Color(0xFFD4A038),
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -572,7 +572,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           await Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const RecurringExpensesScreen(),
+                              builder: (context) => const ExpenseListScreen(),
                             ),
                           );
                           _loadHomeScreenData(showLoading: false);
@@ -589,40 +589,53 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 8),
 
                   // Total Expense Amount Banner
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFDEEEF),
-                      borderRadius: BorderRadius.circular(16.0),
-                      border: Border.all(color: const Color(0xFFF9D5D8)),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Row(
-                          children: [
-                            Icon(Icons.receipt_long_rounded, color: Color(0xFFE55B68), size: 20),
-                            SizedBox(width: 8),
-                            Text(
-                              'Total Expense Amount',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                                color: Color(0xFF232038),
+                  GestureDetector(
+                    onTap: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ExpenseListScreen(),
+                        ),
+                      );
+                      _loadHomeScreenData(showLoading: false);
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16.0, vertical: 14.0),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFDEEEF),
+                        borderRadius: BorderRadius.circular(16.0),
+                        border: Border.all(color: const Color(0xFFF9D5D8)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Row(
+                            children: [
+                              Icon(Icons.receipt_long_rounded,
+                                  color: Color(0xFFE55B68), size: 20),
+                              SizedBox(width: 8),
+                              Text(
+                                'Total Expense Amount',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                  color: Color(0xFF232038),
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                        Text(
-                          _totalExpenseListAmount,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 17,
-                            color: Color(0xFFE55B68),
+                            ],
                           ),
-                        ),
-                      ],
+                          Text(
+                            _totalExpenseListAmount,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 17,
+                              color: Color(0xFFE55B68),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
 
@@ -660,14 +673,16 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: ListView.separated(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        itemCount: _recentExpensesList.length > 5 ? 5 : _recentExpensesList.length,
+                        itemCount: _recentExpensesList.length > 5
+                            ? 5
+                            : _recentExpensesList.length,
                         separatorBuilder: (context, index) =>
                             const Divider(height: 1, color: Color(0xFFF2EEF7)),
                         itemBuilder: (context, index) {
                           final item = _recentExpensesList[index];
                           return ListTile(
-                            contentPadding:
-                                const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 4),
                             leading: Container(
                               width: 42,
                               height: 42,
@@ -679,7 +694,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                   color: Color(0xFFE55B68), size: 20),
                             ),
                             title: Text(
-                              item.name.isNotEmpty ? item.name : 'Expense Transaction',
+                              item.name.isNotEmpty
+                                  ? item.name
+                                  : 'Expense Transaction',
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
@@ -689,8 +706,11 @@ class _HomeScreenState extends State<HomeScreen> {
                             subtitle: Text(
                               item.date.isNotEmpty
                                   ? item.date
-                                  : (item.status.isNotEmpty ? item.status : 'Expense'),
-                              style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                  : (item.status.isNotEmpty
+                                      ? item.status
+                                      : 'Expense'),
+                              style: const TextStyle(
+                                  fontSize: 12, color: Colors.grey),
                             ),
                             trailing: Text(
                               item.amount,

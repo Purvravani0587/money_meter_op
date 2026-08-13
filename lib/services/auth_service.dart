@@ -24,8 +24,7 @@ class AuthService {
     if (decoded is! Map) return;
 
     final status = decoded['status'];
-    final isFailure =
-        status == false ||
+    final isFailure = status == false ||
         status == 0 ||
         status?.toString().toLowerCase() == 'false';
     if (!isFailure) return;
@@ -101,8 +100,7 @@ class AuthService {
     } catch (_) {}
 
     if (decoded is Map<String, dynamic>) {
-      String message =
-          decoded['message']?.toString() ??
+      String message = decoded['message']?.toString() ??
           decoded['error']?.toString() ??
           'Request failed';
 
@@ -201,8 +199,7 @@ class AuthService {
     }
 
     if (decoded is Map<String, dynamic>) {
-      String message =
-          decoded['message']?.toString() ??
+      String message = decoded['message']?.toString() ??
           decoded['error']?.toString() ??
           'Request failed';
 
@@ -254,8 +251,7 @@ class AuthService {
     }
 
     if (decoded is Map<String, dynamic>) {
-      String message =
-          decoded['message']?.toString() ??
+      String message = decoded['message']?.toString() ??
           decoded['error']?.toString() ??
           'Request failed';
 
@@ -439,7 +435,8 @@ class AuthService {
     if (t == 'Investment') return 'V';
     if (t == 'Rental') return 'R';
     if (t == 'Fixed') return 'F';
-    if (t.length == 1 && RegExp(r'[A-Za-z]').hasMatch(t)) return t.toUpperCase();
+    if (t.length == 1 && RegExp(r'[A-Za-z]').hasMatch(t))
+      return t.toUpperCase();
     return 'I';
   }
 
@@ -603,7 +600,8 @@ class AuthService {
     if (t == 'Rent') return 'R';
     if (t == 'Insurance') return 'I';
     if (t == 'Subscription') return 'S';
-    if (t.length == 1 && RegExp(r'[A-Za-z]').hasMatch(t)) return t.toUpperCase();
+    if (t.length == 1 && RegExp(r'[A-Za-z]').hasMatch(t))
+      return t.toUpperCase();
     return 'E';
   }
 
@@ -728,8 +726,7 @@ class AuthService {
           decoded.containsKey('data') &&
           decoded['data'] is Map) {
         final data = decoded['data'] as Map<String, dynamic>;
-        name =
-            data['name']?.toString() ??
+        name = data['name']?.toString() ??
             data['fu_sName']?.toString() ??
             data['fullName']?.toString();
       }
@@ -855,6 +852,12 @@ class AuthService {
   static const String _kFamilyIdKey = 'family_id';
   static const String _kUserIdKey = 'user_id';
   static const String _kAuthMethodPrefix = 'auth_method_';
+  static const String _kRecurringExpenseKey = 'expence';
+  static const String _kRecurringIncomeKey = 'income';
+  static const String _kProjectedExpenseKey = 'p_expence';
+  static const String _kProjectedIncomeKey = 'p_income';
+
+  // Recurring amounts storage
 
   static Future<SharedPreferences> getSharedPreferences() async {
     return await SharedPreferences.getInstance();
@@ -969,6 +972,46 @@ class AuthService {
     } catch (_) {
       return await getFamilyId();
     }
+  }
+
+  static Future<void> saveRecurringExpense(String amount) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kRecurringExpenseKey, amount);
+  }
+
+  static Future<String> getRecurringExpense() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_kRecurringExpenseKey) ?? '₹0';
+  }
+
+  static Future<void> saveRecurringIncome(String amount) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kRecurringIncomeKey, amount);
+  }
+
+  static Future<String> getRecurringIncome() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_kRecurringIncomeKey) ?? '₹0';
+  }
+
+  static Future<void> saveProjectedExpense(String amount) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kProjectedExpenseKey, amount);
+  }
+
+  static Future<String> getProjectedExpense() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_kProjectedExpenseKey) ?? '₹0';
+  }
+
+  static Future<void> saveProjectedIncome(String amount) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kProjectedIncomeKey, amount);
+  }
+
+  static Future<String> getProjectedIncome() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_kProjectedIncomeKey) ?? '₹0';
   }
 
   static Future<Map<String, dynamic>> merchantLogin({
@@ -1276,7 +1319,8 @@ class AuthService {
   static Future<List<FamilyTransactionItem>> getExpenseMasterGrid({
     required int familyId,
     int startRow = 0,
-  }) => getAllExpense(familyId: familyId, startRow: startRow);
+  }) =>
+      getAllExpense(familyId: familyId, startRow: startRow);
 
   /// Raw response for View Expense Master Grid - GET member-api/v1/member-expense?familyId=1&startRow=0
   static Future<dynamic> getExpenseMasterGridRaw({
@@ -1306,7 +1350,8 @@ class AuthService {
   /// Alias for getExpenseMasterDetail - GET member-api/v1/member-expense/{expenseId}
   static Future<FamilyTransactionItem?> getOneExpense({
     required int expenseId,
-  }) => getExpenseMasterDetail(expenseId: expenseId);
+  }) =>
+      getExpenseMasterDetail(expenseId: expenseId);
 
   /// Raw response for Get One Expense - GET member-api/v1/member-expense/{expenseId}
   static Future<dynamic> getExpenseMasterDetailRaw({
@@ -1435,16 +1480,17 @@ class AuthService {
     String? monthDuration,
     required int amount,
     required String nextDueDate,
-  }) => createExpenseMaster(
-    familyId: familyId,
-    expenseName: expenseName,
-    expenseType: expenseType,
-    cycleMonths: cycleMonths,
-    startDate: startDate,
-    monthDuration: monthDuration,
-    amount: amount,
-    nextDueDate: nextDueDate,
-  );
+  }) =>
+      createExpenseMaster(
+        familyId: familyId,
+        expenseName: expenseName,
+        expenseType: expenseType,
+        cycleMonths: cycleMonths,
+        startDate: startDate,
+        monthDuration: monthDuration,
+        amount: amount,
+        nextDueDate: nextDueDate,
+      );
 
   static Future<dynamic> updateExpenseMaster({
     required int familyId,
@@ -1487,18 +1533,19 @@ class AuthService {
     required int amount,
     required String nextDueDate,
     required String status,
-  }) => updateExpenseMaster(
-    familyId: familyId,
-    expenseId: expenseId,
-    expenseName: expenseName,
-    expenseType: expenseType,
-    cycleMonths: cycleMonths,
-    startDate: startDate,
-    monthDuration: monthDuration,
-    amount: amount,
-    nextDueDate: nextDueDate,
-    status: status,
-  );
+  }) =>
+      updateExpenseMaster(
+        familyId: familyId,
+        expenseId: expenseId,
+        expenseName: expenseName,
+        expenseType: expenseType,
+        cycleMonths: cycleMonths,
+        startDate: startDate,
+        monthDuration: monthDuration,
+        amount: amount,
+        nextDueDate: nextDueDate,
+        status: status,
+      );
 
   static Future<String?> getNextDueDate({
     int? familyId,
@@ -1665,8 +1712,10 @@ class AuthService {
   }) async {
     dynamic response;
     final body = buildHomeScreenDataBody(familyId: familyId);
-    final httpsUri = Uri.parse(_apiUrl('member-api/v1', 'get-familyhomescreendata'));
-    final httpUri = Uri.parse('http://moneymeter.biz/member-api/v1/get-familyhomescreendata');
+    final httpsUri =
+        Uri.parse(_apiUrl('member-api/v1', 'get-familyhomescreendata'));
+    final httpUri = Uri.parse(
+        'http://moneymeter.biz/member-api/v1/get-familyhomescreendata');
 
     try {
       response = await _post(httpsUri, body: body);
@@ -1677,13 +1726,19 @@ class AuthService {
         try {
           response = await _get(
             httpsUri,
-            queryParameters: {'familyId': familyId.toString(), 'fInc_familyId': familyId.toString()},
+            queryParameters: {
+              'familyId': familyId.toString(),
+              'fInc_familyId': familyId.toString()
+            },
           );
         } catch (_) {
           try {
             response = await _get(
               httpUri,
-              queryParameters: {'familyId': familyId.toString(), 'fInc_familyId': familyId.toString()},
+              queryParameters: {
+                'familyId': familyId.toString(),
+                'fInc_familyId': familyId.toString()
+              },
             );
           } catch (_) {
             rethrow;
@@ -1701,12 +1756,14 @@ class AuthService {
           return HomeScreenSummary.fromJson(Map<String, dynamic>.from(data));
         }
         if (data is List && data.isNotEmpty && data.first is Map) {
-          return HomeScreenSummary.fromJson(Map<String, dynamic>.from(data.first));
+          return HomeScreenSummary.fromJson(
+              Map<String, dynamic>.from(data.first));
         }
       }
 
       if (mapData.containsKey('summary') && mapData['summary'] is Map) {
-        return HomeScreenSummary.fromJson(Map<String, dynamic>.from(mapData['summary']));
+        return HomeScreenSummary.fromJson(
+            Map<String, dynamic>.from(mapData['summary']));
       }
 
       return HomeScreenSummary.fromJson(mapData);
