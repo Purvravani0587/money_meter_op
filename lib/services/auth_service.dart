@@ -694,6 +694,9 @@ class AuthService {
 
     // If API returned a token, persist it for session persistence
     if (decoded is Map<String, dynamic>) {
+      // These values are specific to the signed-in family. Never display a
+      // previous user's cached dashboard amounts after a new login.
+      await clearDashboardAmountCache();
       // look for common token locations
       String? token;
       if (decoded.containsKey('token')) {
@@ -769,6 +772,7 @@ class AuthService {
       }
       if (familyId != null) {
         await saveFamilyId(familyId);
+        await refreshDashboardAmountCache(familyId: familyId);
       }
 
       // Extract and save fu_id (userId) if present in login response
@@ -1012,6 +1016,52 @@ class AuthService {
   static Future<String> getProjectedIncome() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_kProjectedIncomeKey) ?? '₹0';
+  }
+
+  static Future<void> clearDashboardAmountCache() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_kRecurringExpenseKey);
+    await prefs.remove(_kRecurringIncomeKey);
+    await prefs.remove(_kProjectedExpenseKey);
+    await prefs.remove(_kProjectedIncomeKey);
+  }
+
+  static String _formatDashboardAmount(num amount) {
+    return '₹${amount.toStringAsFixed(amount.truncateToDouble() == amount ? 0 : 2)}';
+  }
+
+  static num _totalTransactionAmount(List<FamilyTransactionItem> items) {
+    return items.fold<num>(0, (total, item) {
+      final value = item.amount.replaceAll(RegExp(r'[^0-9.-]'), '');
+      return total + (num.tryParse(value) ?? 0);
+    });
+  }
+
+  /// Rebuilds the cached amounts for the currently logged-in family.
+  static Future<void> refreshDashboardAmountCache({
+    required int familyId,
+  }) async {
+    try {
+      final results = await Future.wait<dynamic>([
+        getHomeScreenData(familyId: familyId),
+        getExpenseMasterGrid(familyId: familyId, startRow: 0),
+        getAllIncome(familyId: familyId),
+      ]);
+      final summary = results[0] as HomeScreenSummary;
+      final expenses = results[1] as List<FamilyTransactionItem>;
+      final incomes = results[2] as List<FamilyTransactionItem>;
+
+      await saveRecurringExpense(_formatDashboardAmount(
+        _totalTransactionAmount(expenses),
+      ));
+      await saveRecurringIncome(_formatDashboardAmount(
+        _totalTransactionAmount(incomes),
+      ));
+      await saveProjectedExpense(summary.projectedExpenses);
+      await saveProjectedIncome(summary.projectedIncome);
+    } catch (_) {
+      // HomeScreen will still request and render the latest API summary.
+    }
   }
 
   static Future<Map<String, dynamic>> merchantLogin({
