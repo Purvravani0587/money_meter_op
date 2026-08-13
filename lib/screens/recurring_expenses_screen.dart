@@ -141,15 +141,20 @@ class _RecurringExpensesScreenState extends State<RecurringExpensesScreen> {
       final summary = await AuthService.getHomeScreenData(familyId: familyId);
       final totalAmount = _totalAmountFromItems(items);
 
+      final summaryProjExp = num.tryParse(summary.projectedExpenses.replaceAll(RegExp(r'[^0-9.-]'), '')) ?? 0;
+      final totalAmountNum = num.tryParse(totalAmount.replaceAll(RegExp(r'[^0-9.-]'), '')) ?? 0;
+      final totalProjExp = summaryProjExp + totalAmountNum;
+      final totalProjExpStr = '₹${totalProjExp.toStringAsFixed(totalProjExp.truncateToDouble() == totalProjExp ? 0 : 2)}';
+
       await AuthService.saveRecurringExpense(totalAmount);
-      await AuthService.saveProjectedExpense(summary.projectedExpenses);
+      await AuthService.saveProjectedExpense(totalProjExpStr);
       AuthService.notifyDashboardDataChanged();
 
       if (mounted) {
         setState(() {
           _items = items;
           _totalAmount = totalAmount;
-          _projectedAmount = summary.projectedExpenses;
+          _projectedAmount = totalProjExpStr;
           _loadError = null;
         });
       }

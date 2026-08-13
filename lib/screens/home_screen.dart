@@ -144,10 +144,14 @@ class _HomeScreenState extends State<HomeScreen> {
         // MTD income includes only income amounts that have been received.
         _mtdIncome =
             paidIncomeItems.isEmpty ? summary.mtdIncome : paidIncomeAmount;
-        // Cached projected amounts are already combined with recurring
-        // records. Adding the recurring total here caused double counting.
-        _projExpenses = projectedExpense;
-        _projIncome = projectedIncome;
+        // Calculate real-time projected amounts by adding API summary and recurring
+        final apiProjExp = _parseAmount(summary.projectedExpenses);
+        final recExp = _parseAmount(recurringExpense);
+        _projExpenses = _formatAmount(apiProjExp + recExp);
+
+        final apiProjInc = _parseAmount(summary.projectedIncome);
+        final recInc = _parseAmount(recurringIncome);
+        _projIncome = _formatAmount(apiProjInc + recInc);
 
         _recurringExpense = recurringExpense;
         _recurringIncome = recurringIncome;
