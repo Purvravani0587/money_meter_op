@@ -7,7 +7,6 @@ import 'api_test_screen.dart';
 import 'expense_list_screen.dart';
 import 'mtd_income_screen.dart';
 import 'recurring_expenses_screen.dart';
-import 'recurring_income_screen.dart';
 import 'unbilled_transactions_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -302,72 +301,25 @@ class _HomeScreenState extends State<HomeScreen> {
                     childAspectRatio: 1.35,
                     physics: const NeverScrollableScrollPhysics(),
                     children: [
-                      GestureDetector(
-                        onTap: () async {
-                          await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const RecurringExpensesScreen(),
-                            ),
-                          );
-                          _loadHomeScreenData(showLoading: false);
-                        },
-                        child: _buildTopStatCard(
-                          title: 'MTD EXPENSE',
-                          value: _mtdExpense,
-                          valueColor: const Color(0xFF262638),
-                        ),
+                      _buildTopStatCard(
+                        title: 'MTD EXPENSE',
+                        value: _mtdExpense,
+                        valueColor: const Color(0xFF262638),
                       ),
-                      GestureDetector(
-                        onTap: () async {
-                          await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const MtdIncomeScreen(),
-                            ),
-                          );
-                          _loadHomeScreenData(showLoading: false);
-                        },
-                        child: _buildTopStatCard(
-                          title: 'MTD INCOME',
-                          value: _mtdIncome,
-                          valueColor: const Color(0xFF262638),
-                        ),
+                      _buildTopStatCard(
+                        title: 'MTD INCOME',
+                        value: _mtdIncome,
+                        valueColor: const Color(0xFF262638),
                       ),
-                      GestureDetector(
-                        onTap: () async {
-                          await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const RecurringExpensesScreen(),
-                            ),
-                          );
-                          _loadHomeScreenData(showLoading: false);
-                        },
-                        child: _buildTopStatCard(
-                          title: 'PROJ. EXPENSES',
-                          value: _projExpenses,
-                          valueColor: const Color(0xFF7A6830),
-                        ),
+                      _buildTopStatCard(
+                        title: 'PROJ. EXPENSES',
+                        value: _projExpenses,
+                        valueColor: const Color(0xFF7A6830),
                       ),
-                      GestureDetector(
-                        onTap: () async {
-                          await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const RecurringIncomeScreen(),
-                            ),
-                          );
-                          _loadHomeScreenData(showLoading: false);
-                        },
-                        child: _buildTopStatCard(
-                          title: 'PROJ. INCOME',
-                          value: _projIncome,
-                          valueColor: const Color(0xFF7A6830),
-                        ),
+                      _buildTopStatCard(
+                        title: 'PROJ. INCOME',
+                        value: _projIncome,
+                        valueColor: const Color(0xFF7A6830),
                       ),
                     ],
                   ),
