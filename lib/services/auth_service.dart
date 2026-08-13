@@ -1,9 +1,17 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/api_models.dart';
 
 class AuthService {
+  /// Lets the dashboard refresh as soon as a master record is saved.
+  static final ValueNotifier<int> dashboardDataVersion = ValueNotifier(0);
+
+  static void notifyDashboardDataChanged() {
+    dashboardDataVersion.value++;
+  }
+
   // API Base URL
   static const String baseUrl = 'https://moneymeter.biz';
 

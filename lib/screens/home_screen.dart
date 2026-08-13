@@ -53,10 +53,6 @@ class _HomeScreenState extends State<HomeScreen> {
     return '₹${value.toStringAsFixed(value.truncateToDouble() == value ? 0 : 2)}';
   }
 
-  String _sumAmounts(String first, String second) {
-    return _formatAmount(_parseAmount(first) + _parseAmount(second));
-  }
-
   DateTime? _parseTransactionDate(String value) {
     if (value.trim().isEmpty) return null;
     return DateTime.tryParse(value) ??
@@ -74,7 +70,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   String _currentMonthPaidTotal(List<FamilyTransactionItem> items) {
     final now = DateTime.now();
+    final seenIds = <String>{};
     final total = items.where((item) {
+      // A refresh can contain duplicate rows for one transaction. Use its
+      // stable API id so it contributes to the monthly total only once.
+      if (item.id.isNotEmpty && !seenIds.add(item.id)) return false;
       final date = _parseTransactionDate(item.date);
       return date == null || (date.year == now.year && date.month == now.month);
     }).fold<num>(0, (sum, item) => sum + _parseAmount(item.amount));
@@ -86,6 +86,17 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _loadUserProfile();
     _loadHomeScreenData();
+    AuthService.dashboardDataVersion.addListener(_refreshFromDataChange);
+  }
+
+  @override
+  void dispose() {
+    AuthService.dashboardDataVersion.removeListener(_refreshFromDataChange);
+    super.dispose();
+  }
+
+  void _refreshFromDataChange() {
+    _loadHomeScreenData(showLoading: false);
   }
 
   Future<void> _loadUserProfile() async {
@@ -141,8 +152,10 @@ class _HomeScreenState extends State<HomeScreen> {
         // MTD income includes only income amounts that have been received.
         _mtdIncome =
             paidIncomeItems.isEmpty ? summary.mtdIncome : paidIncomeAmount;
-        _projExpenses = _sumAmounts(projectedExpense, recurringExpense);
-        _projIncome = _sumAmounts(projectedIncome, recurringIncome);
+        // Cached projected amounts are already combined with recurring
+        // records. Adding the recurring total here caused double counting.
+        _projExpenses = projectedExpense;
+        _projIncome = projectedIncome;
 
         _recurringExpense = recurringExpense;
         _recurringIncome = recurringIncome;

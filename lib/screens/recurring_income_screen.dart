@@ -160,6 +160,7 @@ class _RecurringIncomeScreenState extends State<RecurringIncomeScreen> {
       // Store in SharedPreferences
       await AuthService.saveRecurringIncome(recurringTotalStr);
       await AuthService.saveProjectedIncome(totalProjIncStr);
+      AuthService.notifyDashboardDataChanged();
 
       if (mounted) {
         setState(() {
