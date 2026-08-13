@@ -72,7 +72,7 @@ class _HomeScreenState extends State<HomeScreen> {
         })();
   }
 
-  String _currentMonthPaidExpenseTotal(List<FamilyTransactionItem> items) {
+  String _currentMonthPaidTotal(List<FamilyTransactionItem> items) {
     final now = DateTime.now();
     final total = items.where((item) {
       final date = _parseTransactionDate(item.date);
@@ -115,13 +115,21 @@ class _HomeScreenState extends State<HomeScreen> {
       final projectedExpense = await AuthService.getProjectedExpense();
       final projectedIncome = await AuthService.getProjectedIncome();
       List<FamilyTransactionItem> paidExpenseItems = [];
+      List<FamilyTransactionItem> paidIncomeItems = [];
       try {
         final paidExpenseResponse =
             await AuthService.getFamilyPaidExpense(familyId: familyId);
         paidExpenseItems =
             FamilyTransactionItem.fromResponse(paidExpenseResponse);
       } catch (_) {}
-      final paidExpenseAmount = _currentMonthPaidExpenseTotal(paidExpenseItems);
+      try {
+        final paidIncomeResponse =
+            await AuthService.getFamilyPaidIncome(familyId: familyId);
+        paidIncomeItems =
+            FamilyTransactionItem.fromResponse(paidIncomeResponse);
+      } catch (_) {}
+      final paidExpenseAmount = _currentMonthPaidTotal(paidExpenseItems);
+      final paidIncomeAmount = _currentMonthPaidTotal(paidIncomeItems);
 
       if (!mounted) return;
 
@@ -130,7 +138,9 @@ class _HomeScreenState extends State<HomeScreen> {
         // MTD expense includes only expense amounts that have been paid.
         _mtdExpense =
             paidExpenseItems.isEmpty ? summary.mtdExpense : paidExpenseAmount;
-        _mtdIncome = _sumAmounts(summary.mtdIncome, recurringIncome);
+        // MTD income includes only income amounts that have been received.
+        _mtdIncome =
+            paidIncomeItems.isEmpty ? summary.mtdIncome : paidIncomeAmount;
         _projExpenses = _sumAmounts(projectedExpense, recurringExpense);
         _projIncome = _sumAmounts(projectedIncome, recurringIncome);
 
