@@ -7,6 +7,14 @@ class HomeScreenSummary {
     this.upcomingIncome = const [],
     this.upcomingExpense = const [],
     this.unbilledItems = const [],
+    this.recurringExpenseAmount = '₹0',
+    this.recurringIncomeAmount = '₹0',
+    this.totalRecurringAmount = '₹0',
+    this.upcomingExpenseAmount = '₹0',
+    this.upcomingIncomeAmount = '₹0',
+    this.unbilledAmount = '₹0',
+    this.unpaidRecurringAmount = '₹0',
+    this.totalExpenseAmount = '₹0',
     this.rawJson,
   });
 
@@ -17,7 +25,18 @@ class HomeScreenSummary {
   final List<FamilyTransactionItem> upcomingIncome;
   final List<FamilyTransactionItem> upcomingExpense;
   final List<FamilyTransactionItem> unbilledItems;
+  final String recurringExpenseAmount;
+  final String recurringIncomeAmount;
+  final String totalRecurringAmount;
+  final String upcomingExpenseAmount;
+  final String upcomingIncomeAmount;
+  final String unbilledAmount;
+  final String unpaidRecurringAmount;
+  final String totalExpenseAmount;
   final Map<String, dynamic>? rawJson;
+
+  /// Expense records are supplied by the home-screen API response.
+  List<FamilyTransactionItem> get expenses => upcomingExpense;
 
   factory HomeScreenSummary.fromJson(Map<String, dynamic> json) {
     // Helper to merge nested metric objects (summary, totals, metrics, overview, data, result) if present
@@ -38,7 +57,15 @@ class HomeScreenSummary {
       }
     }
 
-    for (final key in ['summary', 'totals', 'metrics', 'overview', 'data', 'result', 'payload']) {
+    for (final key in [
+      'summary',
+      'totals',
+      'metrics',
+      'overview',
+      'data',
+      'result',
+      'payload'
+    ]) {
       if (json.containsKey(key) && json[key] != null) {
         mergeObject(json[key]);
       }
@@ -79,7 +106,8 @@ class HomeScreenSummary {
         return FamilyTransactionItem.fromResponse({'data': value});
       }
       if (value is Map) {
-        return FamilyTransactionItem.fromResponse(Map<String, dynamic>.from(value));
+        return FamilyTransactionItem.fromResponse(
+            Map<String, dynamic>.from(value));
       }
       return <FamilyTransactionItem>[];
     }
@@ -223,6 +251,54 @@ class HomeScreenSummary {
       upcomingIncome: parseTransactionList(incomeListRaw),
       upcomingExpense: parseTransactionList(expenseListRaw),
       unbilledItems: parseTransactionList(unbilledListRaw),
+      recurringExpenseAmount: normalize(findValue([
+        'recurringExpenseAmount',
+        'recurring_expense_amount',
+        'recurringExpense',
+        'recurring_expense',
+      ])),
+      recurringIncomeAmount: normalize(findValue([
+        'recurringIncomeAmount',
+        'recurring_income_amount',
+        'recurringIncome',
+        'recurring_income',
+      ])),
+      totalRecurringAmount: normalize(findValue([
+        'totalRecurringAmount',
+        'total_recurring_amount',
+        'totalRecurring',
+        'total_recurring',
+      ])),
+      upcomingExpenseAmount: normalize(findValue([
+        'upcomingExpenseAmount',
+        'upcoming_expense_amount',
+        'totalUpcomingExpense',
+        'total_upcoming_expense',
+      ])),
+      upcomingIncomeAmount: normalize(findValue([
+        'upcomingIncomeAmount',
+        'upcoming_income_amount',
+        'totalUpcomingIncome',
+        'total_upcoming_income',
+      ])),
+      unbilledAmount: normalize(findValue([
+        'unbilledAmount',
+        'unbilled_amount',
+        'totalUnbilled',
+        'total_unbilled',
+      ])),
+      unpaidRecurringAmount: normalize(findValue([
+        'unpaidRecurringAmount',
+        'unpaid_recurring_amount',
+        'totalUnpaidRecurring',
+        'total_unpaid_recurring',
+      ])),
+      totalExpenseAmount: normalize(findValue([
+        'totalExpenseAmount',
+        'total_expense_amount',
+        'totalExpenses',
+        'total_expenses',
+      ])),
     );
   }
 }
@@ -324,16 +400,19 @@ class FamilyTransactionItem {
   }
 
   static String _extractStatus(Map<String, dynamic> json) {
-    final status = _extractString(json, [
-      'status',
-      'paymentStatus',
-      'transactionStatus',
-      'payStatus',
-      'state',
-      'fInc_eStatus',
-      'fex_eStatus',
-      'fEx_eStatus',
-    ], defaultValue: '');
+    final status = _extractString(
+        json,
+        [
+          'status',
+          'paymentStatus',
+          'transactionStatus',
+          'payStatus',
+          'state',
+          'fInc_eStatus',
+          'fex_eStatus',
+          'fEx_eStatus',
+        ],
+        defaultValue: '');
     if (status.isNotEmpty) return status;
     if (json['isPaid'] == true) return 'Paid';
     if (json['isPaid'] == false) return 'Pending';
@@ -343,67 +422,82 @@ class FamilyTransactionItem {
   }
 
   factory FamilyTransactionItem.fromJson(Map<String, dynamic> json) {
-    final rawDateStr = _extractString(json, [
-      'date',
-      'entryDate',
-      'createdAt',
-      'transactionDate',
-      'paymentDate',
-      'dueDate',
-      'fInc_dDate',
-      'fInc_dNextDueDate',
-      'fex_dDate',
-      'fex_dNextDueDate',
-      'fEx_dNextDueDate',
-    ], defaultValue: '');
+    final rawDateStr = _extractString(
+        json,
+        [
+          'date',
+          'entryDate',
+          'createdAt',
+          'transactionDate',
+          'paymentDate',
+          'dueDate',
+          'fInc_dDate',
+          'fInc_dNextDueDate',
+          'fex_dDate',
+          'fex_dNextDueDate',
+          'fEx_dNextDueDate',
+        ],
+        defaultValue: '');
 
-    final rawStartDateStr = _extractString(json, [
-      'fInc_dStartDate',
-      'fex_dStartDate',
-      'fEx_dStartDate',
-      'startDate',
-      'dStartDate',
-      'sDate',
-      'start_date',
-    ], defaultValue: rawDateStr);
+    final rawStartDateStr = _extractString(
+        json,
+        [
+          'fInc_dStartDate',
+          'fex_dStartDate',
+          'fEx_dStartDate',
+          'startDate',
+          'dStartDate',
+          'sDate',
+          'start_date',
+        ],
+        defaultValue: rawDateStr);
 
-    final rawEndDateStr = _extractString(json, [
-      'fInc_dNextDueDate',
-      'fex_dNextDueDate',
-      'fEx_dNextDueDate',
-      'fInc_dEndDate',
-      'fex_dEndDate',
-      'fEx_dEndDate',
-      'endDate',
-      'nextDueDate',
-      'dNextDueDate',
-      'dueDate',
-    ], defaultValue: rawDateStr);
+    final rawEndDateStr = _extractString(
+        json,
+        [
+          'fInc_dNextDueDate',
+          'fex_dNextDueDate',
+          'fEx_dNextDueDate',
+          'fInc_dEndDate',
+          'fex_dEndDate',
+          'fEx_dEndDate',
+          'endDate',
+          'nextDueDate',
+          'dNextDueDate',
+          'dueDate',
+        ],
+        defaultValue: rawDateStr);
 
     return FamilyTransactionItem(
-      id: _extractString(json, [
-        'id',
-        'fInc_id',
-        'fex_id',
-        'fEx_id',
-        'incomeId',
-        'expenseId',
-        'transactionId',
-      ], defaultValue: ''),
-      name: _extractString(json, [
-        'name',
-        'title',
-        'itemName',
-        'incomeName',
-        'expenseName',
-        'sName',
-        'transactionName',
-        'fInc_sName',
-        'fInc_sIncName',
-        'fex_sName',
-        'fex_sExpName',
-        'fEx_sExpName',
-      ], defaultValue: 'Unnamed'),
+      id: _extractString(
+          json,
+          [
+            'id',
+            'fInc_id',
+            'fex_id',
+            'fEx_id',
+            'incomeId',
+            'expenseId',
+            'transactionId',
+          ],
+          defaultValue: ''),
+      name: _extractString(
+          json,
+          [
+            'name',
+            'title',
+            'itemName',
+            'incomeName',
+            'expenseName',
+            'sName',
+            'transactionName',
+            'fInc_sName',
+            'fInc_sIncName',
+            'fex_sName',
+            'fex_sExpName',
+            'fEx_sExpName',
+          ],
+          defaultValue: 'Unnamed'),
       date: _normalizeDate(rawDateStr),
       amount: _extractCurrency(json, [
         'amount',
@@ -439,47 +533,59 @@ class FamilyTransactionItem {
       status: _extractStatus(json),
       startDate: _normalizeDate(rawStartDateStr),
       endDate: _normalizeDate(rawEndDateStr),
-      type: _extractString(json, [
-        'fInc_eIncType',
-        'fex_eExpenseType',
-        'fEx_eExpType',
-        'incomeType',
-        'expenseType',
-        'type',
-        'eIncType',
-        'eExpenseType',
-        'eType',
-      ], defaultValue: ''),
-      paymentCycle: _extractString(json, [
-        'fInc_iCycleMonths',
-        'fex_iCycleMonths',
-        'fEx_iCycleMonths',
-        'cycleMonths',
-        'paymentCycle',
-        'cycle',
-        'iCycleMonths',
-      ], defaultValue: ''),
-      paymentMode: _extractString(json, [
-        'paymentMode',
-        'mode',
-        'pMode',
-        'fInc_ePaymentMode',
-        'fex_ePaymentMode',
-        'fEx_ePaymentMode',
-        'payMode',
-      ], defaultValue: ''),
-      description: _extractString(json, [
-        'description',
-        'remarks',
-        'details',
-        'beneficiary',
-        'beneficiaryDetails',
-        'note',
-        'notes',
-        'fInc_sDescription',
-        'fex_sDescription',
-        'fEx_sDescription',
-      ], defaultValue: ''),
+      type: _extractString(
+          json,
+          [
+            'fInc_eIncType',
+            'fex_eExpenseType',
+            'fEx_eExpType',
+            'incomeType',
+            'expenseType',
+            'type',
+            'eIncType',
+            'eExpenseType',
+            'eType',
+          ],
+          defaultValue: ''),
+      paymentCycle: _extractString(
+          json,
+          [
+            'fInc_iCycleMonths',
+            'fex_iCycleMonths',
+            'fEx_iCycleMonths',
+            'cycleMonths',
+            'paymentCycle',
+            'cycle',
+            'iCycleMonths',
+          ],
+          defaultValue: ''),
+      paymentMode: _extractString(
+          json,
+          [
+            'paymentMode',
+            'mode',
+            'pMode',
+            'fInc_ePaymentMode',
+            'fex_ePaymentMode',
+            'fEx_ePaymentMode',
+            'payMode',
+          ],
+          defaultValue: ''),
+      description: _extractString(
+          json,
+          [
+            'description',
+            'remarks',
+            'details',
+            'beneficiary',
+            'beneficiaryDetails',
+            'note',
+            'notes',
+            'fInc_sDescription',
+            'fex_sDescription',
+            'fEx_sDescription',
+          ],
+          defaultValue: ''),
       rawJson: json,
     );
   }
@@ -507,8 +613,7 @@ class FamilyTransactionItem {
         return fromResponse(data);
       }
       if (data is Map) {
-        final nested =
-            data['data'] ??
+        final nested = data['data'] ??
             data['items'] ??
             data['result'] ??
             data['list'] ??
@@ -521,8 +626,7 @@ class FamilyTransactionItem {
           return fromResponse(nested);
         }
         if (nested is Map) {
-          final nestedItems =
-              nested['items'] ??
+          final nestedItems = nested['items'] ??
               nested['data'] ??
               nested['list'] ??
               nested['incomes'] ??
@@ -545,8 +649,7 @@ class FamilyTransactionItem {
         ];
       }
 
-      final nestedList =
-          map['items'] ??
+      final nestedList = map['items'] ??
           map['result'] ??
           map['list'] ??
           map['incomes'] ??
