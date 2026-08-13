@@ -58,6 +58,30 @@ class _HomeScreenState extends State<HomeScreen> {
     return _formatAmount(_parseAmount(first) + _parseAmount(second));
   }
 
+  DateTime? _parseTransactionDate(String value) {
+    if (value.trim().isEmpty) return null;
+    return DateTime.tryParse(value) ??
+        (() {
+          final parts = value.trim().split(RegExp(r'[/.-]'));
+          if (parts.length != 3) return null;
+          final isYearFirst = parts[0].length == 4;
+          final year = int.tryParse(isYearFirst ? parts[0] : parts[2]);
+          final month = int.tryParse(parts[1]);
+          final day = int.tryParse(isYearFirst ? parts[2] : parts[0]);
+          if (day == null || month == null || year == null) return null;
+          return DateTime(year, month, day);
+        })();
+  }
+
+  String _currentMonthPaidExpenseTotal(List<FamilyTransactionItem> items) {
+    final now = DateTime.now();
+    final total = items.where((item) {
+      final date = _parseTransactionDate(item.date);
+      return date == null || (date.year == now.year && date.month == now.month);
+    }).fold<num>(0, (sum, item) => sum + _parseAmount(item.amount));
+    return _formatAmount(total);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -91,12 +115,22 @@ class _HomeScreenState extends State<HomeScreen> {
       final recurringIncome = await AuthService.getRecurringIncome();
       final projectedExpense = await AuthService.getProjectedExpense();
       final projectedIncome = await AuthService.getProjectedIncome();
+      List<FamilyTransactionItem> paidExpenseItems = [];
+      try {
+        final paidExpenseResponse =
+            await AuthService.getFamilyPaidExpense(familyId: familyId);
+        paidExpenseItems =
+            FamilyTransactionItem.fromResponse(paidExpenseResponse);
+      } catch (_) {}
+      final paidExpenseAmount = _currentMonthPaidExpenseTotal(paidExpenseItems);
 
       if (!mounted) return;
 
       setState(() {
         // Display API values directly
-        _mtdExpense = _sumAmounts(summary.mtdExpense, recurringExpense);
+        // MTD expense includes only expense amounts that have been paid.
+        _mtdExpense =
+            paidExpenseItems.isEmpty ? summary.mtdExpense : paidExpenseAmount;
         _mtdIncome = _sumAmounts(summary.mtdIncome, recurringIncome);
         _projExpenses = _sumAmounts(projectedExpense, recurringExpense);
         _projIncome = _sumAmounts(projectedIncome, recurringIncome);
