@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../models/api_models.dart';
 import '../services/auth_service.dart';
 import '../widgets/responsive_center.dart';
-import 'api_test_screen.dart';
 import 'expense_list_screen.dart';
 import 'mtd_income_screen.dart';
 import 'recurring_expenses_screen.dart';
@@ -43,7 +42,6 @@ class _HomeScreenState extends State<HomeScreen> {
   String _totalExpenseListAmount = '₹0';
 
   bool _hasLoadedHomeData = false;
-  bool _isLoadingHomeData = false;
 
   num _parseAmount(String value) {
     return num.tryParse(value.replaceAll(RegExp(r'[^0-9.-]'), '')) ?? 0;
@@ -112,12 +110,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadHomeScreenData({bool showLoading = true}) async {
-    if (showLoading && !_hasLoadedHomeData) {
-      setState(() {
-        _isLoadingHomeData = true;
-      });
-    }
-
     try {
       final familyId = await AuthService.getFamilyId();
       final summary = await AuthService.getHomeScreenData(familyId: familyId);
@@ -177,13 +169,11 @@ class _HomeScreenState extends State<HomeScreen> {
         _totalExpenseListAmount = summary.totalExpenseAmount;
 
         _hasLoadedHomeData = true;
-        _isLoadingHomeData = false;
       });
     } catch (_) {
       if (mounted) {
         setState(() {
           _hasLoadedHomeData = true;
-          _isLoadingHomeData = false;
         });
       }
     }
@@ -254,59 +244,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ),
                             ],
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const ApiTestScreen(),
-                              ),
-                            );
-                          },
-                          child: Container(
-                            width: 46,
-                            height: 46,
-                            decoration: const BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Color(0x0C000000),
-                                  blurRadius: 10,
-                                  offset: Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                const Icon(Icons.notifications_rounded,
-                                    color: Color(0xFFF5B731), size: 24),
-                                if (_isLoadingHomeData)
-                                  const Positioned(
-                                    top: 10,
-                                    right: 12,
-                                    child: SizedBox(
-                                      width: 8,
-                                      height: 8,
-                                      child: CircularProgressIndicator(
-                                          strokeWidth: 1.5,
-                                          color: Color(0xFFE55B68)),
-                                    ),
-                                  )
-                                else
-                                  const Positioned(
-                                    top: 10,
-                                    right: 12,
-                                    child: CircleAvatar(
-                                      radius: 4,
-                                      backgroundColor: Color(0xFFE55B68),
-                                    ),
-                                  ),
-                              ],
-                            ),
                           ),
                         ),
                       ],
